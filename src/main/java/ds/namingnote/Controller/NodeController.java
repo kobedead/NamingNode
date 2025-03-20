@@ -23,7 +23,7 @@ public class NodeController {
 
 
     @GetMapping("/file/{filename}")
-    public ResponseEntity getNodeIP(@PathVariable String filename) throws FileNotFoundException {
+    public ResponseEntity getFile(@PathVariable String filename) throws FileNotFoundException {
 
         // Checking whether the file requested for download exists or not
         //String fileUploadpath = System.getProperty("user.dir") +"/Uploads";

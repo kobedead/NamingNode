@@ -54,9 +54,8 @@ public class NodeController {
     }
 
     @PostMapping("/file/")
-    public ResponseEntity getFile(@RequestParam("file") MultipartFile file) throws FileNotFoundException {
-
-
+    public ResponseEntity uploadFile(@RequestParam("file") MultipartFile file) throws FileNotFoundException {
+        
 
         try {
             // Process the file (e.g., save it to disk, store in database, etc.)

@@ -58,10 +58,19 @@ public class NodeController {
     }
 
 
-    @PostMapping("/file/")
-    public ResponseEntity<String> downloadFile(@RequestParam("file") MultipartFile file) throws FileNotFoundException {
+    @PostMapping("/file")
+    public ResponseEntity<String> downloadFile(@RequestParam("file") MultipartFile file)  {
 
         try {
+
+            // Define the directory where files should be saved
+            File directory = new File("Files");
+
+            // Create the directory if it does not exist
+            if (!directory.exists()) {
+                directory.mkdirs();  // Creates the directory and parent directories if needed
+            }
+
             // Save the file on disc
             String fileName = file.getOriginalFilename();
             File destFile = new File("Files", fileName);

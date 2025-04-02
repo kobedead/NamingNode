@@ -83,7 +83,16 @@ public class NodeService {
     }
 
 
+    public void calculatePreviousAndNext(int numberOfNodes) {
+        if (numberOfNodes == 0) {
+            /// This is the only node in the network
+            ///  TODO: set previousNodeHash and nextNodeHash to be its own Hash value
 
-
-
+        } else {
+            /// There are other nodes in this network
+            ///  The node should receive parameters for its next and previous node
+            ///  Other nodes should send this after receiving the Multicast
+            ///  This node expects a call on its REST endpoints to set the previous and next node.
+        }
+    }
 }

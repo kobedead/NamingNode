@@ -46,10 +46,9 @@ public class NodeController {
         return nodeService.putFile(file);
     }
 
-
-
-
-
-
-
+    @PostMapping("/size")
+    public ResponseEntity<String> size(@RequestBody int numberOfNodes) {
+        nodeService.calculatePreviousAndNext(numberOfNodes);
+        return ResponseEntity.ok("Received numberOfNodes: " + numberOfNodes);
+    }
 }

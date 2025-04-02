@@ -51,5 +51,21 @@ public class NodeController {
 
 
 
+    @PostMapping("/id/next/{nextID}")
+    public ResponseEntity<String> updateNextID(@PathVariable int nextID)  {
+
+        nodeService.setNextID(nextID);
+        return ResponseEntity.ok("NextID updated succesfully");
+
+    }
+
+    @PostMapping("/id/previous/{previousID}")
+    public ResponseEntity<String> updatePreviousID(@PathVariable int previousID)  {
+
+        nodeService.setPreviousID(previousID);
+        return ResponseEntity.ok("PreviousID updated succesfully");
+
+    }
+
 
 }

@@ -1,5 +1,7 @@
 package ds.namingnote.Multicast;
 
+import ds.namingnote.Service.NodeService;
+
 import java.net.*;
 import java.io.*;
 import java.util.regex.*;
@@ -12,10 +14,14 @@ public class MulticastListener implements Runnable {
     private MulticastSocket socket;
     private InetAddress group;
 
+    private NodeService nodeService;
 
 
     // Constructor
     public MulticastListener() {
+
+        nodeService = new NodeService();
+
         try {
             // Create the multicast socket
             socket = new MulticastSocket(PORT);
@@ -24,7 +30,7 @@ public class MulticastListener implements Runnable {
             group = InetAddress.getByName(MULTICAST_GROUP);
 
             // Join the multicast group
-            socket.joinGroup(group);
+            socket.joinGroup(socket.getInetAddress());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -50,16 +56,15 @@ public class MulticastListener implements Runnable {
                 // Check if the message contains the specific keyword
                 if (message.startsWith(FILTER_KEYWORD)) {
                   //if message has prefix we need to process it
-                    String name = extractName(message);
+                    String name = extractName(message);                 //check
                     if (name != null){
-
+                        nodeService.processIncomingMulticast(sourceAddress.toString() , name);
                     }
-
-
+                    else
+                        System.out.println("Name not found in multicast message");
                 } else {
                     System.out.println("Filtered out message with incorrect prefix: " + message);
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }

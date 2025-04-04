@@ -4,10 +4,6 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,11 +19,11 @@ import java.nio.file.Paths;
 @Service
 public class NodeService {
 
-    int currentID;
-    int previousID;
-    int nextID;
+    private int currentID;
+    private int previousID;
+    private int nextID;
 
-
+    private static final int NODEPORT = 8083;
 
 
     public ResponseEntity<Resource> getFile(String filename) throws FileNotFoundException {
@@ -93,52 +89,83 @@ public class NodeService {
 
         //new node is the only one with me on network
         if (currentID == nextID && currentID == previousID){
-            //then this node needs to send 2x post to the incoming server.
 
-            //set nextID of node
-            String uri = "http://"+ip+":8082/id/next/"+currentID;
+            //now there are 2 node, so they both need to set their neighbors to each other.
 
-            RestTemplate restTemplate = new RestTemplate();
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
-
-            System.out.println(response.getBody());                             //check
-
-            //set previousID of node
-            uri = "http://"+ip+":8082/id/previous/"+currentID;
-
-            restTemplate = new RestTemplate();
-
-            response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
-
-            System.out.println(response.getBody());                             //check
-
+            setOtherNextID(ip , nextID);
+            setOtherPreviousID(ip , previousID);
 
             previousID = nameHash;
             nextID =nameHash;
-        }
 
+            System.out.println("Node : "+currentID+" .Multicast Processed, 2 Nodes On Network");
+
+            return;
+        }
 
         if (nameHash > previousID){
-            //need to send to the ip that i will be after it.
-            //so (post as nextID to node)
+            //this node will be placed as nextID of the new node.
+            setOtherNextID(ip , currentID);
+
+            //the new node needs to be previous of this node
+            setPreviousID(nameHash);
+
+            System.out.println("Node : "+currentID+" .Multicast Processed, new previous node : "+ name);
 
 
+        }
+        if (nameHash < nextID){
+            //this node will be previousID of new node
+            setOtherPreviousID(ip , currentID);
 
+            //the new node needs to be next of this node
+            setNextID(nameHash);
 
-
-
-
+            System.out.println("Node : "+currentID+" .Multicast Processed, new next node : "+ name);
 
 
         }
 
+    }
 
 
+
+    public ResponseEntity<String> setOtherNextID(String ip , int ID){
+
+        String mapping = "node/id/next/";
+
+        String uri = "http://"+ip+":"+NODEPORT+mapping+ID;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                uri, HttpMethod.POST, null, String.class);
+
+        System.out.println("setOtherNextID : " +response.getBody());  //we need to check for error ig
+
+        return  response;                                  //check
 
     }
+
+
+    public ResponseEntity<String> setOtherPreviousID(String ip , int ID){
+
+        String mapping = "node/id/previous/";
+
+        String uri = "http://"+ip+":"+NODEPORT+mapping+ID;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                uri, HttpMethod.POST, null, String.class);
+
+        System.out.println("setOtherPreviousID : " +response.getBody());  //we need to check for error ig
+
+        return  response;                                  //check
+
+    }
+
+
 
 
 

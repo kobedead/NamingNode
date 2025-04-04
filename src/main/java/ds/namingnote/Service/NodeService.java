@@ -1,6 +1,7 @@
 package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
+import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -49,9 +50,9 @@ public class NodeService {
         }
 
         //here this node has full joint the server -> needs to start listening to multicasts
-
         //start the multicast that is using async.
-
+        MulticastListener multicastListener = new MulticastListener();
+        multicastListener.run();
 
     }
 
@@ -231,6 +232,7 @@ public class NodeService {
             ///  The node should receive parameters for its next and previous node
             ///  Other nodes should send this after receiving the Multicast
             ///  This node expects a call on its REST endpoints to set the previous and next node.
+            return;
         }
 
 

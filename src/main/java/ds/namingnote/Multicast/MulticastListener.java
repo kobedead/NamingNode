@@ -3,6 +3,7 @@ package ds.namingnote.Multicast;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Service.NodeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.net.*;
@@ -10,7 +11,7 @@ import java.io.*;
 import java.util.regex.*;
 
 @Component
-public class MulticastListener implements Runnable {
+public class MulticastListener  {
 
 
     private MulticastSocket socket;
@@ -19,8 +20,6 @@ public class MulticastListener implements Runnable {
     @Autowired
     private NodeService nodeService;
 
-
-    // Constructor
     public MulticastListener() {
 
         try {
@@ -40,7 +39,8 @@ public class MulticastListener implements Runnable {
         }
     }
 
-    @Override
+
+    @Async
     public void run() {
         byte[] buffer = new byte[1024];  // Buffer for receiving messages
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

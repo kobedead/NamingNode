@@ -1,0 +1,31 @@
+package ds.namingnote.Multicast;
+import ds.namingnote.Config.NNConf;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+public class MulticastSender {
+
+    public void sendName(String name) throws IOException {
+        String message = NNConf.PREFIX + "{" + name + "}";
+        byte[] buffer = message.getBytes();
+
+        try (DatagramSocket socket = new DatagramSocket()) {
+            InetAddress group = InetAddress.getByName(NNConf.MULTICAST_GROUP);
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, NNConf.Multicast_PORT);
+            socket.send(packet);
+            System.out.println("Multicast message sent: " + message);
+        } catch (UnknownHostException e) {
+            System.err.println("Unknown host: " + NNConf.MULTICAST_GROUP);
+            throw e;
+        } catch (IOException e) {
+            System.err.println("IO Exception during multicast send: " + e.getMessage());
+            throw e;
+        }
+    }
+
+
+}

@@ -1,5 +1,7 @@
 package ds.namingnote.Service;
 
+import ds.namingnote.Config.NNConf;
+import ds.namingnote.Multicast.MulticastSender;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -20,10 +22,40 @@ import java.nio.file.Paths;
 public class NodeService {
 
     private int currentID;
-    private int previousID;
-    private int nextID;
+    private int previousID = -10;
+    private int nextID = -10;
 
-    private static final int NODEPORT = 8083;
+    private boolean jointNetwork = false;
+
+
+    public void setNameBegin(String name) throws IOException {
+        //this will get the name from config and start everything up.
+
+        currentID = mapHash(name);
+
+        MulticastSender multicastSender = new MulticastSender();
+
+        //sending multicast message until we get anwser
+        while(!jointNetwork && nextID == -10 && previousID == -10){
+            multicastSender.sendName(name);
+
+            //this will loop so try to fix the looping texts
+            if(jointNetwork)
+                System.out.println("Got message from server");
+            if(nextID != -10)
+                System.out.println("got message from other node : Next updated");
+            if(previousID !=-10)
+                System.out.println("got message from other node : Previous updated");
+        }
+
+        //here this node has full joint the server -> needs to start listening to multicasts
+
+        //start the multicast that is using async.
+
+
+    }
+
+
 
 
     public ResponseEntity<Resource> getFile(String filename) throws FileNotFoundException {
@@ -134,7 +166,7 @@ public class NodeService {
 
         String mapping = "node/id/next/";
 
-        String uri = "http://"+ip+":"+NODEPORT+mapping+ID;
+        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping+ID;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -152,7 +184,7 @@ public class NodeService {
 
         String mapping = "node/id/previous/";
 
-        String uri = "http://"+ip+":"+NODEPORT+mapping+ID;
+        String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+mapping+ID;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -167,16 +199,12 @@ public class NodeService {
 
 
 
-
-
-
-
     /**
      * Hashing function to hash incoming names (based on given hashing algorithm)
      * @param text name of the node or file to be hashed
      * @return hashed integer value
      */
-    public int mapHash(String text) {
+    public int mapHash (String text){
         int hashCode = text.hashCode();
         int max = Integer.MAX_VALUE;
         int min = Integer.MIN_VALUE;
@@ -188,19 +216,43 @@ public class NodeService {
         return (int) (((long) adjustedHash * 32768) / ((long) max - min));
     }
 
-    public int getPreviousID() {
+
+    public void calculatePreviousAndNext(int numberOfNodes) {
+        if (numberOfNodes == 0) {
+            /// This is the only node in the network
+            ///  TODO: set previousNodeHash and nextNodeHash to be its own Hash value
+
+        } else {
+            /// There are other nodes in this network
+            ///  The node should receive parameters for its next and previous node
+            ///  Other nodes should send this after receiving the Multicast
+            ///  This node expects a call on its REST endpoints to set the previous and next node.
+        }
+
+
+    }
+
+
+
+
+
+
+    public int getPreviousID () {
         return previousID;
     }
 
-    public void setPreviousID(int previousID) {
+    public void setPreviousID ( int previousID){
         this.previousID = previousID;
     }
 
-    public int getNextID() {
+    public int getNextID () {
         return nextID;
     }
 
-    public void setNextID(int nextID) {
+    public void setNextID ( int nextID){
         this.nextID = nextID;
     }
+
+
+
 }

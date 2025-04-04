@@ -1,36 +1,39 @@
 package ds.namingnote.Multicast;
 
+import ds.namingnote.Config.NNConf;
 import ds.namingnote.Service.NodeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.*;
 import java.io.*;
 import java.util.regex.*;
 
+@Component
 public class MulticastListener implements Runnable {
-    private static final String MULTICAST_GROUP = "230.0.0.1";  // Example multicast address
-    private static final int PORT = 4446;  // Example port number
-    private static final String FILTER_KEYWORD = "specificPrefix";  // Example filter keyword
+
 
     private MulticastSocket socket;
     private InetAddress group;
 
+    @Autowired
     private NodeService nodeService;
 
 
     // Constructor
     public MulticastListener() {
 
-        nodeService = new NodeService();
-
         try {
             // Create the multicast socket
-            socket = new MulticastSocket(PORT);
+            socket = new MulticastSocket(NNConf.Multicast_PORT);
 
             // Create a multicast group address
-            group = InetAddress.getByName(MULTICAST_GROUP);
+            group = InetAddress.getByName(NNConf.MULTICAST_GROUP);
+
+            SocketAddress sockaddr = new InetSocketAddress(group, NNConf.Multicast_PORT);
 
             // Join the multicast group
-            socket.joinGroup(socket.getInetAddress());
+            socket.joinGroup(sockaddr, null);                   //can give error
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,7 +45,7 @@ public class MulticastListener implements Runnable {
         byte[] buffer = new byte[1024];  // Buffer for receiving messages
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-        System.out.println("Listening for multicast messages on group: " + MULTICAST_GROUP + " and port: " + PORT);
+        System.out.println("Listening for multicast messages on group: " + NNConf.MULTICAST_GROUP + " and port: " + NNConf.Multicast_PORT);
 
         while (true) {
             try {
@@ -54,7 +57,7 @@ public class MulticastListener implements Runnable {
                 String message = new String(packet.getData(), 0, packet.getLength());
 
                 // Check if the message contains the specific keyword
-                if (message.startsWith(FILTER_KEYWORD)) {
+                if (message.startsWith(NNConf.PREFIX)) {
                   //if message has prefix we need to process it
                     String name = extractName(message);                 //check
                     if (name != null){
@@ -99,13 +102,4 @@ public class MulticastListener implements Runnable {
         return null;
     }
 
-
-
-
-    public static void main(String[] args) {
-        // Create and start the listener thread
-        MulticastListener listener = new MulticastListener();
-        Thread listenerThread = new Thread(listener);
-        listenerThread.start();
-    }
 }

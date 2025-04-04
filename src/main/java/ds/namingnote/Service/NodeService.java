@@ -25,7 +25,7 @@ public class NodeService {
     private int previousID = -10;
     private int nextID = -10;
 
-    private boolean jointNetwork = false;
+    private boolean namingServerResponse = false;
 
 
     public void setNameBegin(String name) throws IOException {
@@ -36,11 +36,11 @@ public class NodeService {
         MulticastSender multicastSender = new MulticastSender();
 
         //sending multicast message until we get anwser
-        while(!jointNetwork && nextID == -10 && previousID == -10){
+        while(!namingServerResponse && nextID == -10 && previousID == -10){
             multicastSender.sendName(name);
 
             //this will loop so try to fix the looping texts
-            if(jointNetwork)
+            if(namingServerResponse)
                 System.out.println("Got message from server");
             if(nextID != -10)
                 System.out.println("got message from other node : Next updated");
@@ -218,10 +218,14 @@ public class NodeService {
 
 
     public void calculatePreviousAndNext(int numberOfNodes) {
+
+        namingServerResponse = true;
+        System.out.println("NamingServer has responded, number of nodes : "+ numberOfNodes);
+
         if (numberOfNodes == 0) {
             /// This is the only node in the network
-            ///  TODO: set previousNodeHash and nextNodeHash to be its own Hash value
-
+            previousID = currentID;
+            nextID = currentID;
         } else {
             /// There are other nodes in this network
             ///  The node should receive parameters for its next and previous node

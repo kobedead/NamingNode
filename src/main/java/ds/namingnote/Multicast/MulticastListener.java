@@ -10,17 +10,18 @@ import java.net.*;
 import java.io.*;
 import java.util.regex.*;
 
-@Component
-public class MulticastListener  {
+
+public class MulticastListener implements Runnable {
 
 
     private MulticastSocket socket;
     private InetAddress group;
 
-    @Autowired
     private NodeService nodeService;
 
-    public MulticastListener() {
+    public MulticastListener(NodeService nodeService) {
+        this.nodeService = nodeService;
+
 
         try {
             // Create the multicast socket
@@ -39,15 +40,15 @@ public class MulticastListener  {
         }
     }
 
-
-    @Async
+    @Override
     public void run() {
         byte[] buffer = new byte[1024];  // Buffer for receiving messages
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
         System.out.println("Listening for multicast messages on group: " + NNConf.MULTICAST_GROUP + " and port: " + NNConf.Multicast_PORT);
 
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
+
             try {
                 // Receive the incoming packet
                 socket.receive(packet);
@@ -60,7 +61,7 @@ public class MulticastListener  {
                 if (message.startsWith(NNConf.PREFIX)) {
                   //if message has prefix we need to process it
                     String name = extractName(message);                 //check
-                    if (name != null){
+                    if (name != null && nodeService.mapHash(name) != nodeService.getCurrentID()){ //otherwise it picks up its own multicast
                         nodeService.processIncomingMulticast(sourceAddress.toString() , name);
                     }
                     else

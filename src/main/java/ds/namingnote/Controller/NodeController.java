@@ -1,6 +1,7 @@
 package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,8 +14,9 @@ public class NodeController {
 
     NodeService nodeService;
 
-    public NodeController(){
-        nodeService = new NodeService();
+    @Autowired
+    public NodeController(NodeService nodeService){
+        this.nodeService = nodeService;
     }
 
 

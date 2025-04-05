@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
+import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -18,6 +19,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PrivateKey;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class NodeService {
@@ -27,34 +31,63 @@ public class NodeService {
     private int nextID = -10;
 
     private boolean namingServerResponse = false;
+    private MulticastListener multicastListener;
+    private ExecutorService multicastExecutor;
+    private MulticastSender multicastSender;
 
+    private boolean listenerStarted = false;
 
+    private Thread multicastSenderThread;
+
+    private Thread multicastListenerThread;
+
+    //set name (bit of constructor ig)
     public void setNameBegin(String name) throws IOException {
-        //this will get the name from config and start everything up.
+
+        this.multicastListener = new MulticastListener(this);
+        this.multicastSender = new MulticastSender(name);
+        this.multicastExecutor = Executors.newSingleThreadExecutor();
 
         currentID = mapHash(name);
 
-        MulticastSender multicastSender = new MulticastSender();
 
-        //sending multicast message until we get anwser
-        while(!namingServerResponse && nextID == -10 && previousID == -10){
-            multicastSender.sendName(name);
+        multicastSenderThread = new Thread(multicastSender);
+        multicastListenerThread = new Thread(multicastListener);
 
-            //this will loop so try to fix the looping texts
-            if(namingServerResponse)
-                System.out.println("Got message from server");
-            if(nextID != -10)
-                System.out.println("got message from other node : Next updated");
-            if(previousID !=-10)
-                System.out.println("got message from other node : Previous updated");
-        }
+        //begin sending messages
 
-        //here this node has full joint the server -> needs to start listening to multicasts
-        //start the multicast that is using async.
-        MulticastListener multicastListener = new MulticastListener();
-        multicastListener.run();
+        multicastSenderThread.start();
 
     }
+
+
+
+    public void checkConnection(){
+        if(!listenerStarted && namingServerResponse && nextID != -10 && previousID != -10) {
+
+
+
+            multicastSenderThread.interrupt();                                //bad but yea
+
+            multicastListenerThread.start();
+
+            listenerStarted = true;
+
+            return;
+        }
+
+        System.out.println("CurrentID = " + currentID);
+        if(namingServerResponse)
+            System.out.println("Got message from server");
+        if(nextID != -10)
+            System.out.println("got message from other node : Next updated");
+        if(previousID !=-10)
+            System.out.println("got message from other node : Previous updated");
+
+    }
+
+
+
 
 
 
@@ -165,7 +198,7 @@ public class NodeService {
 
     public ResponseEntity<String> setOtherNextID(String ip , int ID){
 
-        String mapping = "node/id/next/";
+        String mapping = "/node/id/next/";
 
         String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping+ID;
 
@@ -183,7 +216,7 @@ public class NodeService {
 
     public ResponseEntity<String> setOtherPreviousID(String ip , int ID){
 
-        String mapping = "node/id/previous/";
+        String mapping = "/node/id/previous/";
 
         String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+mapping+ID;
 
@@ -223,19 +256,19 @@ public class NodeService {
         namingServerResponse = true;
         System.out.println("NamingServer has responded, number of nodes : "+ numberOfNodes);
 
-        if (numberOfNodes == 0) {
+        if (numberOfNodes == 1) {
             /// This is the only node in the network
             previousID = currentID;
             nextID = currentID;
+
         } else {
             /// There are other nodes in this network
             ///  The node should receive parameters for its next and previous node
             ///  Other nodes should send this after receiving the Multicast
             ///  This node expects a call on its REST endpoints to set the previous and next node.
-            return;
+
         }
-
-
+        this.checkConnection();
     }
 
 
@@ -259,6 +292,7 @@ public class NodeService {
         this.nextID = nextID;
     }
 
-
-
+    public int getCurrentID() {
+        return currentID;
+    }
 }

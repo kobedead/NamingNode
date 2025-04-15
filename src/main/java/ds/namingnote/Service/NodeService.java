@@ -338,7 +338,7 @@ public class NodeService {
             return;
         }
 
-        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "namingserver/node/ping";
+        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/namingserver/node/ping";
         RestTemplate restTemplate = new RestTemplate();
 
         try {

@@ -7,7 +7,7 @@ public class NNConf {
     public static final int NAMINGNODE_PORT = 8082;
 
     //////////NamingServer specs
-
+    public static final String NAMINGSERVER_HOST = "172.19.0.6"; // Corresponds to g2c1
     public static final int NAMINGSERVER_PORT = 8083;
 
 

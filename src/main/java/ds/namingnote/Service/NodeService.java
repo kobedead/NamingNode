@@ -324,6 +324,7 @@ public class NodeService {
                     setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), ip);
                 } else if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next
                     setOtherNextID(nextAndPrevious.values().stream().findFirst().get() ,nextAndPrevious.keySet().stream().findFirst().get(), ip);
+                    setOtherPreviousID(nextAndPrevious.values().stream().findFirst().get() ,nextAndPrevious.keySet().stream().findFirst().get(), ip);
                 }
 
 

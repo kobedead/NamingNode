@@ -58,6 +58,7 @@ public class NodeService {
         //begin sending messages
 
         multicastSenderThread.start();
+        multicastListenerThread.start();
 
     }
 

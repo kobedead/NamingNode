@@ -168,6 +168,8 @@ public class NodeService {
 
             previousID = nameHash;
             nextID = nameHash;
+            nextIP = ip;
+            previousIP = ip;
 
             System.out.println("Node : "+currentID+" .Multicast Processed, 2 Nodes On Network");
 

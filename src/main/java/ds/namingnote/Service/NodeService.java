@@ -217,7 +217,7 @@ public class NodeService {
 
             return  response;                                  //check
         } catch (Exception e) {
-            System.out.println("Exception in communication between nodes -> handleFailure");
+            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
             handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -243,7 +243,7 @@ public class NodeService {
             return  response;                                  //check
         } catch (Exception e) {
             // If communication between nodes fails, execute failure
-            System.out.println("Exception in communication between nodes -> handleFailure");
+            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
             handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

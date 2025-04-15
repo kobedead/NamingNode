@@ -206,6 +206,8 @@ public class NodeService {
 
         RestTemplate restTemplate = new RestTemplate();
 
+        System.out.println("setOtherNextID for node" + name + " on ip " + ip);
+
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.POST, null, String.class);
@@ -214,6 +216,7 @@ public class NodeService {
 
             return  response;                                  //check
         } catch (Exception e) {
+            System.out.println("Exception in communication between nodes -> handleFailure");
             handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -228,6 +231,8 @@ public class NodeService {
 
         RestTemplate restTemplate = new RestTemplate();
 
+        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
+
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.POST, null, String.class);
@@ -237,6 +242,7 @@ public class NodeService {
             return  response;                                  //check
         } catch (Exception e) {
             // If communication between nodes fails, execute failure
+            System.out.println("Exception in communication between nodes -> handleFailure");
             handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -62,4 +62,9 @@ public class NodeController {
         nodeService.calculatePreviousAndNext(numberOfNodes);
         return ResponseEntity.ok("Received numberOfNodes: " + numberOfNodes);
     }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("alive");
+    }
 }

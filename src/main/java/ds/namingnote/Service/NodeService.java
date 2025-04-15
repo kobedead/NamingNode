@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +31,9 @@ public class NodeService {
     private int currentID;
     private int previousID = -10;
     private int nextID = -10;
+
+    private String nextIP = "";
+    private String previousIP = "";
 
     private boolean namingServerResponse = false;
     private MulticastListener multicastListener;
@@ -162,7 +166,7 @@ public class NodeService {
             setOtherPreviousID(ip , previousID, name);
 
             previousID = nameHash;
-            nextID =nameHash;
+            nextID = nameHash;
 
             System.out.println("Node : "+currentID+" .Multicast Processed, 2 Nodes On Network");
 
@@ -216,7 +220,6 @@ public class NodeService {
             return  response;                                  //check
         } catch (Exception e) {
             System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
-            handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -242,7 +245,6 @@ public class NodeService {
         } catch (Exception e) {
             // If communication between nodes fails, execute failure
             System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
-            handleFailure(name);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -287,63 +289,92 @@ public class NodeService {
         this.checkConnection();
     }
 
-    public void handleFailure(String name) {
-        //TODO: change this to namingserver ip
+    public void handleFailure(String ip) {
         String baseUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver";
         RestTemplate restTemplate = new RestTemplate();
 
         try {
-            // 1. Get next and previous node info
-            String getUri = baseUri + "/node/nextAndPrevious/" + name;
+            String getUri = baseUri + "/node/nextAndPrevious/" + ip;
             ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 Map<Integer, String> nextAndPrevious = response.getBody();
-                System.out.println("Next and Previous for node " + name + ": " + nextAndPrevious);
+                System.out.println("Next and Previous for node " + ip + ": " + nextAndPrevious);
 
                 // Set the next id of the previous node to the next id of the failed node
                 Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                 Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
 
-                setOtherNextID(previousEntry.getValue(), previousEntry.getKey(), name);
-                setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), name);
+                setOtherNextID(previousEntry.getValue(), previousEntry.getKey(), ip);
+                setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), ip);
             } else {
-                System.out.println("Failed to retrieve next and previous info for node: " + name);
+                System.out.println("Failed to retrieve next and previous info for node: " + ip);
             }
         } catch (Exception e) {
             System.err.println("Error fetching next and previous info: " + e.getMessage());
         }
 
         try {
-            // 2. Remove the node
-            String deleteUri = baseUri + "/node/" + name;
+            String deleteUri = baseUri + "/node/by-ip/" + ip;
             restTemplate.delete(deleteUri);
-            System.out.println("Node " + name + " removed successfully.");
+            System.out.println("Node " + ip + " removed successfully.");
         } catch (Exception e) {
             System.err.println("Error deleting node: " + e.getMessage());
         }
     }
 
+    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+    public void pingNextAndPreviousNode() {
+        System.out.println("Pinging previous and next nodes...");
 
+        pingNode(previousIP, "previous");
+        pingNode(nextIP, "next");
+    }
 
+    private void pingNode(String ip, String label) {
+        if (ip == null) {
+            System.out.println(label + " IP is null, skipping ping.");
+            return;
+        }
 
+        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
+        RestTemplate restTemplate = new RestTemplate();
 
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
+        } catch (Exception e) {
+            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
+            handleFailure(ip);
+        }
+    }
 
+    private String fetchIpById(int id) {
+        String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/node/by-id/" + id;
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            return restTemplate.getForObject(url, String.class);
+        } catch (Exception e) {
+            System.err.println("Failed to fetch IP for ID " + id + ": " + e.getMessage());
+            return null;
+        }
+    }
 
     public int getPreviousID () {
         return previousID;
     }
 
-    public void setPreviousID ( int previousID){
+    public void setPreviousID(int previousID) {
         this.previousID = previousID;
+        this.previousIP = fetchIpById(previousID);
+        System.out.println("Previous ID set to " + previousID + " with IP: " + previousIP);
     }
 
-    public int getNextID () {
-        return nextID;
-    }
-
-    public void setNextID ( int nextID){
+    public void setNextID(int nextID) {
         this.nextID = nextID;
+        this.nextIP = fetchIpById(nextID);
+        System.out.println("Next ID set to " + nextID + " with IP: " + nextIP);
     }
 
     public int getCurrentID() {

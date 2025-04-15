@@ -297,6 +297,14 @@ public class NodeService {
         RestTemplate restTemplate = new RestTemplate();
 
         try {
+            String deleteUri = baseUri + "/node/by-ip/" + ip;
+            restTemplate.delete(deleteUri);
+            System.out.println("Node " + ip + " removed successfully.");
+        } catch (Exception e) {
+            System.err.println("Error deleting node: " + e.getMessage());
+        }
+
+        try {
             String getUri = baseUri + "/node/nextAndPrevious/" + ip;
             ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
 
@@ -315,14 +323,6 @@ public class NodeService {
             }
         } catch (Exception e) {
             System.err.println("Error fetching next and previous info: " + e.getMessage());
-        }
-
-        try {
-            String deleteUri = baseUri + "/node/by-ip/" + ip;
-            restTemplate.delete(deleteUri);
-            System.out.println("Node " + ip + " removed successfully.");
-        } catch (Exception e) {
-            System.err.println("Error deleting node: " + e.getMessage());
         }
     }
 

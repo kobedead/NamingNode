@@ -207,6 +207,7 @@ public class NodeService {
         RestTemplate restTemplate = new RestTemplate();
 
         System.out.println("setOtherNextID for node" + name + " on ip " + ip);
+        System.out.println("Call to " + uri);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Service
 public class NodeService {
@@ -301,15 +302,31 @@ public class NodeService {
             ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
-                Map<Integer, String> nextAndPrevious = response.getBody();
+                Map<String, String> stringMap = response.getBody();
+
+                if (stringMap == null) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
+                }
+
+                Map<Integer, String> nextAndPrevious = stringMap.entrySet()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                entry -> Integer.parseInt(entry.getKey()), // Convert key to Integer
+                                Map.Entry::getValue
+                        ));
                 System.out.println("Next and Previous for node " + ip + ": " + nextAndPrevious);
 
                 // Set the next id of the previous node to the next id of the failed node
-                Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
-                Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+                if (nextAndPrevious.keySet().size() == 2) {
+                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
+                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+                    setOtherNextID(previousEntry.getValue(), previousEntry.getKey(), ip);
+                    setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), ip);
+                } else if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next
+                    setOtherNextID(nextAndPrevious.values().stream().findFirst().get() ,nextAndPrevious.keySet().stream().findFirst().get(), ip);
+                }
 
-                setOtherNextID(previousEntry.getValue(), previousEntry.getKey(), ip);
-                setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), ip);
+
             } else {
                 System.out.println("Failed to retrieve next and previous info for node: " + ip);
             }

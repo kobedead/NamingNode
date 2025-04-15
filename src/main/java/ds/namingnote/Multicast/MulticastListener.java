@@ -62,7 +62,7 @@ public class MulticastListener implements Runnable {
                   //if message has prefix we need to process it
                     String name = extractName(message);                 //check
                     if (name != null && nodeService.mapHash(name) != nodeService.getCurrentID()){ //otherwise it picks up its own multicast
-                        nodeService.processIncomingMulticast(sourceAddress.toString() , name);
+                        nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
                     }
                     else
                         System.out.println("Name not found in multicast message");

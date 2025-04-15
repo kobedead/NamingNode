@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -332,7 +333,7 @@ public class NodeService {
     }
 
     private void pingNode(String ip, String label) {
-        if (ip == null) {
+        if (Objects.equals(ip, "")) {
             System.out.println(label + " IP is null, skipping ping.");
             return;
         }

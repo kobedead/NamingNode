@@ -350,7 +350,7 @@ public class NodeService {
     }
 
     private String fetchIpById(int id) {
-        String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "namingserver/node/by-id/" + id;
+        String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver/node/by-id/" + id;
 
         try {
             RestTemplate restTemplate = new RestTemplate();

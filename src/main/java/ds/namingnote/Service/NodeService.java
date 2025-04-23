@@ -39,7 +39,6 @@ public class NodeService {
 
     private boolean namingServerResponse = false;
     private MulticastListener multicastListener;
-    private ExecutorService multicastExecutor;
     private MulticastSender multicastSender;
 
     private boolean listenerStarted = false;
@@ -53,25 +52,22 @@ public class NodeService {
 
         this.multicastListener = new MulticastListener(this);
         this.multicastSender = new MulticastSender(name);
-        this.multicastExecutor = Executors.newSingleThreadExecutor();
 
         currentID = mapHash(name);
-
 
         multicastSenderThread = new Thread(multicastSender);
         multicastListenerThread = new Thread(multicastListener);
 
         //begin sending messages
-
         multicastSenderThread.start();
     }
 
 
 
     public void checkConnection(){
+
+        // if node is connected -> stop sending and start listening
         if(!listenerStarted && namingServerResponse && nextID != -10 && previousID != -10) {
-
-
 
             multicastSenderThread.interrupt();                                //bad but yea
 
@@ -91,10 +87,6 @@ public class NodeService {
             System.out.println("got message from other node : Previous updated");
 
     }
-
-
-
-
 
 
 
@@ -381,6 +373,24 @@ public class NodeService {
             return null;
         }
     }
+
+
+    public void shutdown(){
+
+        setOtherNextID(previousIP,previousID, "");
+        setOtherPreviousID(nextIP,nextID,"");
+
+        String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver" + "/node/by-id/" + currentID;
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.delete(deleteUri);
+
+        System.exit(0);
+
+    }
+
+
+
+
 
     public int getPreviousID () {
         return previousID;

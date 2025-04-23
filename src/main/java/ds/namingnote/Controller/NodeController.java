@@ -67,4 +67,16 @@ public class NodeController {
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("alive");
     }
+
+
+    @DeleteMapping("/shutdown")
+    public void shutdown(){
+
+        nodeService.shutdown();
+
+    }
+
+
+
+
 }

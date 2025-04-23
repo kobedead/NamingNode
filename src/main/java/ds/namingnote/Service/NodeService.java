@@ -69,6 +69,8 @@ public class NodeService {
         // if node is connected -> stop sending and start listening
         if(!listenerStarted && namingServerResponse && nextID != -10 && previousID != -10) {
 
+            System.out.println("Multicast stops");
+
             multicastSenderThread.interrupt();                                //bad but yea
 
             multicastListenerThread.start();

@@ -72,7 +72,9 @@ public class MulticastListener implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
+
     }
 
     // Close the socket when done

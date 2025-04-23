@@ -270,7 +270,12 @@ public class NodeService {
         namingServerResponse = true;
         System.out.println("NamingServer has responded, number of nodes : "+ numberOfNodes);
 
-        if (numberOfNodes == 1) {
+        if (numberOfNodes == -1){
+         //hash of node already in map of namingserver -> cant join
+            System.out.println("hash of node already in map of namingserver -> cant join ==> SHUTDOWN");
+            System.exit(0);
+        }
+        else if (numberOfNodes == 1) {
             /// This is the only node in the network
             previousID = currentID;
             nextID = currentID;

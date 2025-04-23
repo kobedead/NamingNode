@@ -57,6 +57,13 @@ public class NodeController {
 
     }
 
+    /**
+     * Method size, get size from map of namingserver.
+     * * if namingserver returns -1 -> hash already in map -> cant join
+     *
+     * @param numberOfNodes the number of nodes in the naming server map
+     * @return responseEnity if everything went ok
+     */
     @PostMapping("/size")
     public ResponseEntity<String> size(@RequestBody int numberOfNodes) {
         nodeService.calculatePreviousAndNext(numberOfNodes);

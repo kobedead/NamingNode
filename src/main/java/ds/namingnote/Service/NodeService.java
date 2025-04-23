@@ -66,6 +66,8 @@ public class NodeService {
 
     public void checkConnection(){
 
+        System.out.println("CheckConnect called ");
+
         // if node is connected -> stop sending and start listening
         if(!listenerStarted && namingServerResponse && nextID != -10 && previousID != -10) {
 
@@ -407,12 +409,15 @@ public class NodeService {
         this.previousID = previousID;
         this.previousIP = fetchIpById(previousID);
         System.out.println("Previous ID set to " + previousID + " with IP: " + previousIP);
+        this.checkConnection();
     }
 
     public void setNextID(int nextID) {
         this.nextID = nextID;
         this.nextIP = fetchIpById(nextID);
         System.out.println("Next ID set to " + nextID + " with IP: " + nextIP);
+        this.checkConnection();
+
     }
 
     public int getCurrentID() {

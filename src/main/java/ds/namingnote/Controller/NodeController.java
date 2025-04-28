@@ -1,6 +1,7 @@
 package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
+import ds.namingnote.Service.ReplicationService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -16,12 +17,14 @@ public class NodeController {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(NodeController.class);
     NodeService nodeService;
+    ReplicationService replicationService;
     Logger logger = Logger.getLogger(NodeController.class.getName());
 
 
     @Autowired
-    public NodeController(NodeService nodeService){
+    public NodeController(NodeService nodeService , ReplicationService replicationService){
         this.nodeService = nodeService;
+        this.replicationService = replicationService;
     }
 
 
@@ -29,7 +32,7 @@ public class NodeController {
     @GetMapping("/file/{filename}")
     public ResponseEntity<Resource> returnFile(@PathVariable String filename) throws FileNotFoundException {
 
-        return nodeService.getFile(filename);
+        return replicationService.getFile(filename);
 
     }
 
@@ -37,7 +40,7 @@ public class NodeController {
     @PostMapping("/file")
     public ResponseEntity<String> downloadFile(@RequestParam("file") MultipartFile file)  {
 
-        return nodeService.putFile(file);
+        return replicationService.putFile(file);
     }
 
 

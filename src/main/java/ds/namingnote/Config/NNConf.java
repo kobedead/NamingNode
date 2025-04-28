@@ -16,5 +16,8 @@ public class NNConf {
     public static final int Multicast_PORT = 4446;
     public static final String PREFIX = "joining";  // Example filter keyword
 
+    ////// File location
+
+    public static final String FILES_DIR = "src/main/resources/Files";
 
 }

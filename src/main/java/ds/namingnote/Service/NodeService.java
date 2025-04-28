@@ -79,6 +79,8 @@ public class NodeService {
 
             listenerStarted = true;
 
+
+
             return;
         }
 
@@ -294,6 +296,33 @@ public class NodeService {
         this.checkConnection();
     }
 
+
+    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+    public void pingNextAndPreviousNode() {
+        System.out.println("Pinging previous and next nodes...");
+
+        pingNode(previousIP, "previous");
+        pingNode(nextIP, "next");
+    }
+
+    private void pingNode(String ip, String label) {
+        if (Objects.equals(ip, "")) {
+            System.out.println(label + " IP is null, skipping ping.");
+            return;
+        }
+
+        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
+        } catch (Exception e) {
+            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
+            handleFailure(ip);
+        }
+    }
+
     public void handleFailure(String ip) {
         String baseUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver";
         RestTemplate restTemplate = new RestTemplate();
@@ -345,31 +374,14 @@ public class NodeService {
         }
     }
 
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void pingNextAndPreviousNode() {
-        System.out.println("Pinging previous and next nodes...");
 
-        pingNode(previousIP, "previous");
-        pingNode(nextIP, "next");
-    }
 
-    private void pingNode(String ip, String label) {
-        if (Objects.equals(ip, "")) {
-            System.out.println(label + " IP is null, skipping ping.");
-            return;
-        }
 
-        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
-        RestTemplate restTemplate = new RestTemplate();
 
-        try {
-            String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
-        } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
-            handleFailure(ip);
-        }
-    }
+
+
+
+
 
     private String fetchIpById(int id) {
         String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver/node/by-id/" + id;

@@ -51,7 +51,6 @@ public class NodeController {
 
     @PostMapping("/id/previous/{previousID}")
     public ResponseEntity<String> updatePreviousID(@PathVariable int previousID)  {
-
         nodeService.setPreviousID(previousID);
         return ResponseEntity.ok("PreviousID updated succesfully");
 

@@ -3,7 +3,9 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
+import ds.namingnote.Utilities.Utilities;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -47,13 +49,17 @@ public class NodeService {
 
     private Thread multicastListenerThread;
 
+
+    @Autowired
+    private ReplicationService replicationService;
+
     //set name (bit of constructor ig)
     public void setNameBegin(String name) throws IOException {
 
         this.multicastListener = new MulticastListener(this);
         this.multicastSender = new MulticastSender(name);
 
-        currentID = mapHash(name);
+        currentID = Utilities.mapHash(name);
 
         multicastSenderThread = new Thread(multicastSender);
         multicastListenerThread = new Thread(multicastListener);
@@ -79,6 +85,8 @@ public class NodeService {
 
             listenerStarted = true;
 
+            replicationService.start();
+
             return;
         }
 
@@ -94,66 +102,8 @@ public class NodeService {
 
 
 
-    public ResponseEntity<Resource> getFile(String filename) throws FileNotFoundException {
-
-        Path path = Paths.get("Files/" + filename);
-
-        // Check if file exists
-        if (Files.notExists(path)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File Not Found");
-        }
-
-        try {
-            File file = path.toFile();
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
-
-            // Try to determine the content type dynamically
-            String contentType = Files.probeContentType(path);
-            if (contentType == null) {
-                contentType = "application/octet-stream";  // Default fallback
-            }
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
-                    .body(resource);
-
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error reading file", e);
-        }
-
-    }
-
-
-    public ResponseEntity<String> putFile(MultipartFile file)  {
-
-        try {
-
-            // Define the directory where files should be saved
-            File directory = new File("Files");
-
-            // Create the directory if it does not exist
-            if (!directory.exists()) {
-                directory.mkdirs();  // Creates the directory and parent directories if needed
-            }
-
-            // Save the file on disc
-            String fileName = file.getOriginalFilename();
-            File destFile = new File("Files", fileName);
-            System.out.println("File saved to: " + destFile.getAbsolutePath());
-            file.transferTo(destFile.toPath());
-
-            return ResponseEntity.ok("File uploaded successfully: " + fileName);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to upload the file");
-        }
-    }
-
     public void processIncomingMulticast(String ip, String name){
-        int nameHash = mapHash(name);
+        int nameHash = Utilities.mapHash(name);
 
         //new node is the only one with me on network
         if (currentID == nextID && currentID == previousID){
@@ -251,22 +201,6 @@ public class NodeService {
 
 
 
-    /**
-     * Hashing function to hash incoming names (based on given hashing algorithm)
-     * @param text name of the node or file to be hashed
-     * @return hashed integer value
-     */
-    public int mapHash (String text){
-        int hashCode = text.hashCode();
-        int max = Integer.MAX_VALUE;
-        int min = Integer.MIN_VALUE;
-
-        // Ensure the hashCode is always positive
-        int adjustedHash = Math.abs(hashCode);
-
-        // Mapping hashCode from (Integer.MIN_VALUE, Integer.MAX_VALUE) to (0, 32768)
-        return (int) (((long) adjustedHash * 32768) / ((long) max - min));
-    }
 
 
     public void calculatePreviousAndNext(int numberOfNodes) {
@@ -292,6 +226,33 @@ public class NodeService {
 
         }
         this.checkConnection();
+    }
+
+
+    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+    public void pingNextAndPreviousNode() {
+        System.out.println("Pinging previous and next nodes...");
+
+        pingNode(previousIP, "previous");
+        pingNode(nextIP, "next");
+    }
+
+    private void pingNode(String ip, String label) {
+        if (Objects.equals(ip, "")) {
+            System.out.println(label + " IP is null, skipping ping.");
+            return;
+        }
+
+        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
+        } catch (Exception e) {
+            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
+            handleFailure(ip);
+        }
     }
 
     public void handleFailure(String ip) {
@@ -345,31 +306,14 @@ public class NodeService {
         }
     }
 
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void pingNextAndPreviousNode() {
-        System.out.println("Pinging previous and next nodes...");
 
-        pingNode(previousIP, "previous");
-        pingNode(nextIP, "next");
-    }
 
-    private void pingNode(String ip, String label) {
-        if (Objects.equals(ip, "")) {
-            System.out.println(label + " IP is null, skipping ping.");
-            return;
-        }
 
-        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
-        RestTemplate restTemplate = new RestTemplate();
 
-        try {
-            String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
-        } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
-            handleFailure(ip);
-        }
-    }
+
+
+
+
 
     private String fetchIpById(int id) {
         String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver/node/by-id/" + id;

@@ -27,18 +27,12 @@ import static ds.namingnote.Config.NNConf.NAMINGSERVER_HOST;
 @Service
 public class ReplicationService {
 
-
-
-
-
-
     public void start(){
 
         File dir = new File(FILES_DIR);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-
 
                 String mapping = "/node/by-filename/";
                 String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping+child.getName();
@@ -58,7 +52,12 @@ public class ReplicationService {
 
                     }else {
                         //this node isn't the right one -> send file to ip and save ip in map
-                        sendFile(localHost.getHostAddress() , (MultipartFile) child);
+
+                        //should do check or execution if file transfer not completed!!!!
+                        ResponseEntity<String> check = sendFile(localHost.getHostAddress() , (MultipartFile) child);
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
+                        //save ip to filename (refrence)
 
 
 
@@ -69,15 +68,9 @@ public class ReplicationService {
                     System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
                 }
             }
-
-
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-
-
-
-
     }
 
     public ResponseEntity<String> sendFile(String ip ,MultipartFile file)  {

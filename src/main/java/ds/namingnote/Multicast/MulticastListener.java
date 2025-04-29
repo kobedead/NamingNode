@@ -2,6 +2,7 @@ package ds.namingnote.Multicast;
 
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Service.NodeService;
+import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -61,7 +62,7 @@ public class MulticastListener implements Runnable {
                 if (message.startsWith(NNConf.PREFIX)) {
                   //if message has prefix we need to process it
                     String name = extractName(message);                 //check
-                    if (name != null && nodeService.mapHash(name) != nodeService.getCurrentID()){ //otherwise it picks up its own multicast
+                    if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()){ //otherwise it picks up its own multicast
                         nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
                     }
                     else

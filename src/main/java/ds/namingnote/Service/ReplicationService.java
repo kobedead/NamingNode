@@ -1,7 +1,8 @@
 package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
-import ds.namingnote.Utilities.Utilities;
+import ds.namingnote.FileCheck.FileChecker;
+import ds.namingnote.model.LocalJsonMap;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -14,65 +15,123 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static ds.namingnote.Config.NNConf.FILES_DIR;
-import static ds.namingnote.Config.NNConf.NAMINGSERVER_HOST;
+import static ds.namingnote.Config.NNConf.*;
 
 @Service
 public class ReplicationService {
 
+
+    private Thread fileCheckerThread;
+
+    private LocalJsonMap<String , String> fileReferences;
+
+    public ReplicationService() {
+        this.fileReferences = new LocalJsonMap<>(MAP_PATH);
+        fileCheckerThread = new Thread(new FileChecker());
+
+    }
+
+
+    /**
+     * Method start
+     * Will go over all files in FILES_DIR and check with naming server is file
+     * belongs to itself or if it needs replication
+     *
+     *
+     */
     public void start(){
 
-        File dir = new File(FILES_DIR);
+
+        File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
+            //loop over files
             for (File child : directoryListing) {
 
-                String mapping = "/node/by-filename/";
-                String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping+child.getName();
+                String mapping = "/node/by-filename/" + child.getName();
+                String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
 
                 RestTemplate restTemplate = new RestTemplate();
 
                 try {
+                    //get ip of node that file belongs to from the naming server
                     ResponseEntity<String> response = restTemplate.exchange(
                             uri, HttpMethod.POST, null, String.class);
                     String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
 
-                    InetAddress localHost = InetAddress.getLocalHost(); //get own IP
+                    //get own IP
+                    InetAddress localHost = InetAddress.getLocalHost();           // (MAYBE GET FROM NODESERVICE?)
 
-                    if (ipOfNode.equals(localHost.getHostAddress())) {
-                        //this node should own the file, so it doenst need to send it anywhere
+                    //if ip the file belongs to in not from this node -> send to right node
+                    if (!ipOfNode.equals(localHost.getHostAddress())) {
 
+                        System.out.println("The file : "+ child.getName() + " Needs to be send to : " + ipOfNode);
 
-                    }else {
-                        //this node isn't the right one -> send file to ip and save ip in map
+                        //this node isn't the right one -> send file to ip and save ip in register
 
                         //should do check or execution if file transfer not completed!!!!
-                        ResponseEntity<String> check = sendFile(localHost.getHostAddress() , (MultipartFile) child);
+                        ResponseEntity<String> check = sendFile(ipOfNode , (MultipartFile) child);
                         System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
-                        //save ip to filename (refrence)
-
-
+                        //save ip to filename (reference)
+                        fileReferences.putSingle(child.getName() , ipOfNode);
 
                     }
-
+                    else
+                        System.out.println("The file : " + child.getName() + " Is already on right node");
 
                 } catch (Exception e) {
                     System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
                 }
             }
+            //here all the files should be checked, so a thread can be started to check for updated in the file DIR
+            fileCheckerThread.start();
+
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
     }
 
+
+    /**
+     * Method fileAdded
+     * Gets called from FileChecker thread when file gets added to FILES_DIR
+     *
+     * @param filename name of file that is added
+     */
+    public void fileAdded(String filename){
+
+        //should do almost the same as start()  method
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Method sendFile
+     * Sends a file to a node
+     * @param ip ip of node to send to
+     * @param file file to send to node
+     * @return response of the node
+     */
     public ResponseEntity<String> sendFile(String ip ,MultipartFile file)  {
 
 
@@ -101,12 +160,17 @@ public class ReplicationService {
     }
 
 
-
-
-
+    /**
+     * Method getFile
+     * Search for a file on the local disc (FILES_DIR)
+     *
+     *
+     * @param filename name of file to look for
+     * @return ResponsEntity with ok and file if file is found, otherwise a ResponseStatusException
+     */
     public ResponseEntity<Resource> getFile(String filename)  {
 
-        Path path = Paths.get("Files/" + filename);
+        Path path = Paths.get(FILES_DIR + filename);
 
         // Check if file exists
         if (Files.notExists(path)) {
@@ -134,13 +198,20 @@ public class ReplicationService {
 
     }
 
+    /**
+     * Method putFile
+     * Puts a given file in the local directory (FILES_DIR)
+     *
+     * @param file file to save to disc
+     * @return ResponsEntity with status of saving operation
+     */
 
     public ResponseEntity<String> putFile(MultipartFile file)  {
 
         try {
 
             // Define the directory where files should be saved
-            File directory = new File("Files");
+            File directory = new File(FILES_DIR);
 
             // Create the directory if it does not exist
             if (!directory.exists()) {
@@ -149,7 +220,7 @@ public class ReplicationService {
 
             // Save the file on disc
             String fileName = file.getOriginalFilename();
-            File destFile = new File("Files", fileName);
+            File destFile = new File(FILES_DIR, fileName);
             System.out.println("File saved to: " + destFile.getAbsolutePath());
             file.transferTo(destFile.toPath());
 

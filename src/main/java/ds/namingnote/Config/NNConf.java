@@ -21,6 +21,10 @@ public class NNConf {
     public static final String FILES_DIR = "src/main/resources/Files";
 
 
+    //reference map path
+    public static final String MAP_PATH = "src/main/resources/map.json";
+
+
 
 
 

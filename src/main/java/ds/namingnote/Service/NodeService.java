@@ -27,8 +27,6 @@ public class NodeService {
 
     private boolean namingServerResponse = false;
 
-    private MulticastListener multicastListener;
-    private MulticastSender multicastSender;
     private Thread multicastSenderThread;
     private Thread multicastListenerThread;
 
@@ -54,13 +52,9 @@ public class NodeService {
         //set current node
         this.currentNode =  currentnode ;
 
-
-        //create multicast listener and sender
-        this.multicastListener = new MulticastListener(this);
-        this.multicastSender = new MulticastSender(name);
         //create the threads for the multicasters
-        multicastSenderThread = new Thread(multicastSender);
-        multicastListenerThread = new Thread(multicastListener);
+        multicastSenderThread = new Thread(new MulticastSender(name));
+        multicastListenerThread = new Thread(new MulticastListener(this));
 
         //begin sending messages
         multicastSenderThread.start();

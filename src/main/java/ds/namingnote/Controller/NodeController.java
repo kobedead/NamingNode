@@ -2,6 +2,7 @@ package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
+import ds.namingnote.Utilities.Node;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -44,17 +45,17 @@ public class NodeController {
     }
 
 
-    @PostMapping("/id/next/{nextID}")
-    public ResponseEntity<String> updateNextID(@PathVariable int nextID)  {
+    @PostMapping("/id/next")
+    public ResponseEntity<String> updateNextID(@RequestParam Node nextID)  {
         logger.info("POST: /id/next/" + nextID);
-        nodeService.setNextID(nextID);
+        nodeService.setNextNode(nextID);
         return ResponseEntity.ok("NextID updated succesfully");
 
     }
 
-    @PostMapping("/id/previous/{previousID}")
-    public ResponseEntity<String> updatePreviousID(@PathVariable int previousID)  {
-        nodeService.setPreviousID(previousID);
+    @PostMapping("/id/previous")
+    public ResponseEntity<String> updatePreviousID(@RequestParam Node previousID)  {
+        nodeService.setPreviousNode(previousID);
         return ResponseEntity.ok("PreviousID updated succesfully");
 
     }

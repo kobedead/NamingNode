@@ -3,64 +3,62 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
+import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.Utilities;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.PrivateKey;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
 public class NodeService {
 
-    private int currentID;
-    private int previousID = -10;
-    private int nextID = -10;
+    Node currentNode =null;
+    Node nextNode = null;
+    Node previousNode = null;
 
-    private String nextIP = "";
-    private String previousIP = "";
 
     private boolean namingServerResponse = false;
+
     private MulticastListener multicastListener;
     private MulticastSender multicastSender;
-
-    private boolean listenerStarted = false;
-
     private Thread multicastSenderThread;
-
     private Thread multicastListenerThread;
 
+    private boolean listenerStarted = false;
 
     @Autowired
     private ReplicationService replicationService;
 
-    //set name (bit of constructor ig)
-    public void setNameBegin(String name) throws IOException {
 
+    /**
+     *  Method setNameBegin
+     *  Gets called from NamingNoteApplication if startup and name is set.
+     *  This method is used as makeshift constructor.
+     *
+     * @param name name given tot the node
+     */
+    public void setNameBegin(String name) throws UnknownHostException {
+
+        //get own ip
+        InetAddress localHost = InetAddress.getLocalHost(); //get own IP
+        //create node object for current node
+        Node currentnode = new Node(Utilities.mapHash(name) , localHost.getHostAddress());
+        //set current node
+        this.currentNode =  currentnode ;
+
+
+        //create multicast listener and sender
         this.multicastListener = new MulticastListener(this);
         this.multicastSender = new MulticastSender(name);
-
-        currentID = Utilities.mapHash(name);
-
+        //create the threads for the multicasters
         multicastSenderThread = new Thread(multicastSender);
         multicastListenerThread = new Thread(multicastListener);
 
@@ -68,80 +66,86 @@ public class NodeService {
         multicastSenderThread.start();
     }
 
-
-
+    /**
+     * Method checkConnection
+     * called when other nodes and/or naming server gets multicast
+     * check if the node has successfully joint the network
+     *
+     */
     public void checkConnection(){
 
         System.out.println("CheckConnect called ");
 
         // if node is connected -> stop sending and start listening
-        if(!listenerStarted && namingServerResponse && nextID != -10 && previousID != -10) {
+        if(!listenerStarted && namingServerResponse && nextNode != null && previousNode != null) {
 
             System.out.println("Multicast stops");
-
-            multicastSenderThread.interrupt();                                //bad but yea
-
-            multicastListenerThread.start();
-
+            multicastSenderThread.interrupt(); //stop the sending thread
+            multicastListenerThread.start();  //start the listening thread
             listenerStarted = true;
-
-            replicationService.start();
-
+            replicationService.start();  //start the replication phase
             return;
         }
 
-        System.out.println("CurrentID = " + currentID);
         if(namingServerResponse)
             System.out.println("Got message from server");
-        if(nextID != -10)
+        if(nextNode != null)
             System.out.println("got message from other node : Next updated");
-        if(previousID !=-10)
+        if(previousNode != null)
             System.out.println("got message from other node : Previous updated");
 
     }
 
 
-
+    /**
+     * Method processIncomingMulticast
+     * Gets called from the multicastListener thread
+     * process the multicast received from other node
+     *
+     *
+     * @param ip ip from sender of multicast
+     * @param name name of node (sender multicast)
+     */
     public void processIncomingMulticast(String ip, String name){
         int nameHash = Utilities.mapHash(name);
+        Node incommingNode = new Node(nameHash , ip);
 
         //new node is the only one with me on network
-        if (currentID == nextID && currentID == previousID){
+        if (currentNode == nextNode && currentNode == previousNode){
 
             //now there are 2 node, so they both need to set their neighbors to each other.
 
-            setOtherNextID(ip , nextID, name);
-            setOtherPreviousID(ip , previousID, name);
+            //set previous and next of other node
+            setOtherNextNode(ip , nextNode, name);
+            setOtherPreviousNode(ip , nextNode, name);
 
-            previousID = nameHash;
-            nextID = nameHash;
-            nextIP = ip;
-            previousIP = ip;
+            //set previous and next of this node
+            nextNode = incommingNode;
+            previousNode = incommingNode;
 
-            System.out.println("Node : "+currentID+" .Multicast Processed, 2 Nodes On Network");
-
+            System.out.println("Node : "+currentNode.getID() +" .Multicast Processed, 2 Nodes On Network");
             return;
         }
 
-        if (nameHash > previousID){
+        if (nameHash > previousNode.getID()){
+
             //this node will be placed as nextID of the new node.
-            setOtherNextID(ip , currentID, name);
+            setOtherNextNode(ip , currentNode, name);
 
             //the new node needs to be previous of this node
-            setPreviousID(nameHash);
+            setPreviousNode(incommingNode);
 
-            System.out.println("Node : "+currentID+" .Multicast Processed, new previous node : "+ name);
-
+            System.out.println("Node : "+ currentNode.getID() +" .Multicast Processed, new previous node : "+ name);
 
         }
-        if (nameHash < nextID){
+        if (nameHash < nextNode.getID()){
             //this node will be previousID of new node
-            setOtherPreviousID(ip , currentID, name);
+            setOtherPreviousNode(ip , currentNode, name);
 
             //the new node needs to be next of this node
-            setNextID(nameHash);
+            setNextNode(incommingNode);
 
-            System.out.println("Node : "+currentID+" .Multicast Processed, new next node : "+ name);
+            System.out.println("Node : "+ currentNode.getID() +" .Multicast Processed, new next node : "+ name);
 
 
         }
@@ -150,20 +154,23 @@ public class NodeService {
 
 
 
-    public ResponseEntity<String> setOtherNextID(String ip , int ID, String name){
+    public ResponseEntity<String> setOtherNextNode(String ip , Node node, String name){
 
-        String mapping = "/node/id/next/";
-
-        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping+ID;
+        String mapping = "/node/id/next";
+        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
+        HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
         System.out.println("setOtherNextID for node" + name + " on ip " + ip);
         System.out.println("Call to " + uri);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
+                    uri, HttpMethod.POST, requestEntity, String.class);
 
             System.out.println("setOtherNextID : " +response.getBody());  //we need to check for error ig
 
@@ -175,19 +182,21 @@ public class NodeService {
     }
 
 
-    public ResponseEntity<String> setOtherPreviousID(String ip , int ID, String name){
+    public ResponseEntity<String> setOtherPreviousNode(String ip , Node node , String name){
 
-        String mapping = "/node/id/previous/";
-
-        String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+mapping+ID;
+        String mapping = "/node/id/previous";
+        String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+mapping;
 
         RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
+        HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
         System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
+                    uri, HttpMethod.POST, requestEntity, String.class);
 
             System.out.println("setOtherPreviousID : " +response.getBody());  //we need to check for error ig
 
@@ -215,8 +224,8 @@ public class NodeService {
         }
         else if (numberOfNodes == 1) {
             /// This is the only node in the network
-            previousID = currentID;
-            nextID = currentID;
+            previousNode = currentNode;
+            nextNode = currentNode;
 
         } else {
             /// There are other nodes in this network
@@ -233,8 +242,8 @@ public class NodeService {
     public void pingNextAndPreviousNode() {
         System.out.println("Pinging previous and next nodes...");
 
-        pingNode(previousIP, "previous");
-        pingNode(nextIP, "next");
+        pingNode(previousNode.getIP(), "previous");
+        pingNode(nextNode.getIP(), "next");
     }
 
     private void pingNode(String ip, String label) {
@@ -280,13 +289,22 @@ public class NodeService {
 
                 // Set the next id of the previous node to the next id of the failed node
                 if (nextAndPrevious.keySet().size() == 2) {
+                    //extract previous and next node of failed node from part map
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
-                    setOtherNextID(previousEntry.getValue(), previousEntry.getKey(), ip);
-                    setOtherPreviousID(nextEntry.getValue(), nextEntry.getKey(), ip);
+                    Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
+                    Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
+
+                    //set previous of next to previous of failed
+                    setOtherPreviousNode(failedNextNode.getIP() , previousNode , "Set previous of next to previous of failed");
+                    //set next of previous to next of failed
+                    setOtherNextNode(failedPreviousNode.getIP() , nextNode , "set next of previous to next of failed" );
+
                 } else if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next
-                    setOtherNextID(nextAndPrevious.values().stream().findFirst().get() ,nextAndPrevious.keySet().stream().findFirst().get(), ip);
-                    setOtherPreviousID(nextAndPrevious.values().stream().findFirst().get() ,nextAndPrevious.keySet().stream().findFirst().get(), ip);
+                    // only one other node on network -> set previous and next to its own
+                    Node onlyOne = new Node(nextAndPrevious.keySet().stream().findFirst().get() ,nextAndPrevious.values().stream().findFirst().get());
+                    setOtherNextNode(onlyOne.getIP(), onlyOne , "Set onlyOne next to own");
+                    setOtherPreviousNode(onlyOne.getIP() , onlyOne , "Set onlyOne previous to own");
                 }
 
 
@@ -307,64 +325,41 @@ public class NodeService {
     }
 
 
-
-
-
-
-
-
-
-
-    private String fetchIpById(int id) {
-        String url = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver/node/by-id/" + id;
-
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            return restTemplate.getForObject(url, String.class);
-        } catch (Exception e) {
-            System.err.println("Failed to fetch IP for ID " + id + ": " + e.getMessage());
-            return null;
-        }
-    }
-
-
     public void shutdown(){
 
-        setOtherNextID(previousIP,previousID, "");
-        setOtherPreviousID(nextIP,nextID,"");
+        setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
+        setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
 
-        String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver" + "/node/by-id/" + currentID;
+        String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
+        String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
+
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.delete(deleteUri);
 
         System.exit(0);
-
     }
 
 
 
 
 
-    public int getPreviousID () {
-        return previousID;
+    public Node getPreviousNode () {
+        return previousNode;
     }
 
-    public void setPreviousID(int previousID) {
-        this.previousID = previousID;
-        this.previousIP = fetchIpById(previousID);
-        System.out.println("Previous ID set to " + previousID + " with IP: " + previousIP);
+    public void setPreviousNode(Node previousNode) {
+        this.previousNode = previousNode;
+        System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
         this.checkConnection();
     }
 
-    public void setNextID(int nextID) {
-        this.nextID = nextID;
-        this.nextIP = fetchIpById(nextID);
-        System.out.println("Next ID set to " + nextID + " with IP: " + nextIP);
+    public void setNextNode(Node nextNode) {
+        this.nextNode = nextNode;
+        System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
         this.checkConnection();
-
     }
 
-    public int getCurrentID() {
-        return currentID;
+    public Node getCurrentNode() {
+        return currentNode;
     }
 }

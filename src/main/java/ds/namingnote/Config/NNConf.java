@@ -20,4 +20,9 @@ public class NNConf {
 
     public static final String FILES_DIR = "src/main/resources/Files";
 
+
+
+
+
+
 }

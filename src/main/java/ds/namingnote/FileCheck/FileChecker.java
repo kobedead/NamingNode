@@ -1,12 +1,25 @@
 package ds.namingnote.FileCheck;
 
+import ds.namingnote.Service.ReplicationService;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static ds.namingnote.Config.NNConf.FILES_DIR;
 
 public class FileChecker implements Runnable{
+    private static final Logger LOGGER = Logger.getLogger(FileChecker.class.getName());
+    private boolean running = true;
+
+    private ReplicationService replicationService;
+
+
+    public FileChecker(ReplicationService replicationService) {
+        this.replicationService = replicationService;
+    }
 
     @Override
     public void run() {
@@ -26,35 +39,76 @@ public class FileChecker implements Runnable{
             System.out.println("Watching directory: " + directoryPath);
 
             // Infinite loop to continuously watch for events
-            while (true) {
-                WatchKey key = watchService.take();
+            while (running) {
+                if (!Thread.currentThread().isInterrupted()) {
+                    running = false;
+                    break;
+                }
 
-                for (WatchEvent<?> event : key.pollEvents())
-                {
+                WatchKey key;
+                try {
+                    // Retrieve and remove the next watch key, waiting if necessary
+                    key = watchService.take();
+                } catch (InterruptedException e) {
+                    LOGGER.log(Level.INFO, "File watcher interrupted.", e);
+                    running = false; // Exit the loop if interrupted
+                    break;
+                } catch (ClosedWatchServiceException e) {
+                    LOGGER.log(Level.WARNING, "Watch service closed.", e);
+                    running = false; // Exit the loop if the service is closed
+                    break;
+                }
+
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    // Get the type of event and the affected file
+                    WatchEvent.Kind<?> kind = event.kind();
+                    Path fileName = (Path) event.context();
+                    Path fullFileName = directoryPath.resolve(fileName);
+
                     // Handle the specific event
-                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE)
-                    {
-                        System.out.println("File created: " + event.context());
-                    }
-                    else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE)
-                    {
-                        System.out.println("File deleted: " + event.context());
-                    }
-                    else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY)
-                    {
-                        System.out.println("File modified: " + event.context());
+                    if (kind == StandardWatchEventKinds.OVERFLOW) {
+
+                        LOGGER.log(Level.WARNING, "Watch event overflow - events might have been lost.");
+
+                    } else if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+
+                        LOGGER.log(Level.INFO, "File created: " + fullFileName);
+                        replicationService.fileAdded(fullFileName.toFile());
+
+                    } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+
+                        LOGGER.log(Level.INFO, "File deleted: " + fileName);
+
+                        // Add specific handling for file deletion
+                    } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+
+                        LOGGER.log(Level.INFO, "File modified: " + fileName);
+
+                        // Add specific handling for file modification
                     }
                 }
 
-                // To receive further events, reset the key
-                key.reset();
+                // To receive further events, reset the key.
+                // If the key is no longer valid, the directory is inaccessible
+                // or the watch service has been closed.
+                boolean valid = key.reset();
+                if (!valid) {
+                    running = false; // Exit the loop if the key is invalid
+                }
             }
 
+
         }
-        catch (IOException | InterruptedException e)
-        {
-            e.printStackTrace();
+        catch (IOException e) {
+             LOGGER.log(Level.SEVERE, "IOException in file watcher.", e);
         }
 
     }
 }
+
+
+
+
+
+
+

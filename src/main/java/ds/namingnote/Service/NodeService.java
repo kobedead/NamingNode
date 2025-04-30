@@ -236,34 +236,35 @@ public class NodeService {
     public void pingNextAndPreviousNode() {
         System.out.println("Pinging previous and next nodes...");
 
-        pingNode(previousNode.getIP(), "previous");
-        pingNode(nextNode.getIP(), "next");
+        pingNode(previousNode, "previous");
+        pingNode(nextNode, "next");
     }
 
-    private void pingNode(String ip, String label) {
-        if (Objects.equals(ip, "")) {
-            System.out.println(label + " IP is null, skipping ping.");
+    private void pingNode(Node node, String label) {
+        if (Objects.equals(node, null)) {
+            System.out.println(label + " Node is null, skipping ping.");
             return;
         }
 
-        String url = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
+        String url = "http://" + node.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
         RestTemplate restTemplate = new RestTemplate();
 
         try {
             String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + ip + ") successful: " + response);
+            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
         } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + ip + "): " + e.getMessage());
-            handleFailure(ip);
+            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
+            handleFailure(node);
         }
     }
 
-    public void handleFailure(String ip) {
+    public void handleFailure(Node node) {
         String baseUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver";
         RestTemplate restTemplate = new RestTemplate();
 
         try {
-            String getUri = baseUri + "/node/nextAndPrevious/" + ip;
+            //get the failed node next and previous nodes from naming server
+            String getUri = baseUri + "/node/nextAndPrevious/" + node.getID();
             ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -279,13 +280,14 @@ public class NodeService {
                                 entry -> Integer.parseInt(entry.getKey()), // Convert key to Integer
                                 Map.Entry::getValue
                         ));
-                System.out.println("Next and Previous for node " + ip + ": " + nextAndPrevious);
+                System.out.println("Next and Previous for node " + node.getIP() + ": " + nextAndPrevious);
 
                 // Set the next id of the previous node to the next id of the failed node
                 if (nextAndPrevious.keySet().size() == 2) {
                     //extract previous and next node of failed node from part map
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
 
@@ -303,16 +305,16 @@ public class NodeService {
 
 
             } else {
-                System.out.println("Failed to retrieve next and previous info for node: " + ip);
+                System.out.println("Failed to retrieve next and previous info for node: " + node.getIP());
             }
         } catch (Exception e) {
             System.err.println("Error fetching next and previous info: " + e.getMessage());
         }
-
+        //if successfully set everything we can delete the failed node from the naming server
         try {
-            String deleteUri = baseUri + "/node/by-ip/" + ip;
+            String deleteUri = baseUri + "/node/by-id/" + node.getID();
             restTemplate.delete(deleteUri);
-            System.out.println("Node " + ip + " removed successfully.");
+            System.out.println("Node " + node.getID() + " removed successfully.");
         } catch (Exception e) {
             System.err.println("Error deleting node: " + e.getMessage());
         }

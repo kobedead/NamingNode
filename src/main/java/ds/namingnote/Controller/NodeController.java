@@ -3,6 +3,7 @@ package ds.namingnote.Controller;
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -16,7 +17,6 @@ import java.util.logging.Logger;
 @RequestMapping("/node")
 public class NodeController {
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(NodeController.class);
     NodeService nodeService;
     ReplicationService replicationService;
     Logger logger = Logger.getLogger(NodeController.class.getName());
@@ -31,32 +31,30 @@ public class NodeController {
 
 
     @GetMapping("/file/{filename}")
-    public ResponseEntity<Resource> returnFile(@PathVariable String filename) throws FileNotFoundException {
-
-        return replicationService.getFile(filename);
-
+    public ResponseEntity<Resource> returnFile(@PathVariable String filename, HttpServletRequest request) {
+        return replicationService.getFile(filename, request.getRemoteAddr()); // get the file
     }
 
 
     @PostMapping("/file")
     public ResponseEntity<String> downloadFile(@RequestParam("file") MultipartFile file)  {
-
         return replicationService.putFile(file);
     }
 
 
     @PostMapping("/id/next")
-    public ResponseEntity<String> updateNextID(@RequestParam Node nextID)  {
-        logger.info("POST: /id/next/" + nextID);
-        nodeService.setNextNode(nextID);
-        return ResponseEntity.ok("NextID updated succesfully");
+    public ResponseEntity<String> updateNextNode(@RequestParam Node nextNode)  {
+        logger.info("POST: /id/next/" + nextNode);
+        nodeService.setNextNode(nextNode);
+        return ResponseEntity.ok("NextNode updated succesfully");
 
     }
 
     @PostMapping("/id/previous")
-    public ResponseEntity<String> updatePreviousID(@RequestParam Node previousID)  {
-        nodeService.setPreviousNode(previousID);
-        return ResponseEntity.ok("PreviousID updated succesfully");
+    public ResponseEntity<String> updatePreviousNode(@RequestParam Node previousNode)  {
+        logger.info("POST: /id/previous/" + previousNode);
+        nodeService.setPreviousNode(previousNode);
+        return ResponseEntity.ok("PreviousNode updated succesfully");
 
     }
 

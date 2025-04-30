@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.model.LocalJsonMap;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -33,15 +34,14 @@ public class ReplicationService {
 
     public ReplicationService() {
         this.fileReferences = new LocalJsonMap<>(MAP_PATH);
-        fileCheckerThread = new Thread(new FileChecker());
+        fileCheckerThread = new Thread(new FileChecker(this));
 
     }
 
 
     /**
      * Method start
-     * Will go over all files in FILES_DIR and check with naming server is file
-     * belongs to itself or if it needs replication
+     * Will go over all files in FILES_DIR and checks through fileAdded
      *
      *
      */
@@ -53,42 +53,7 @@ public class ReplicationService {
         if (directoryListing != null) {
             //loop over files
             for (File child : directoryListing) {
-
-                String mapping = "/node/by-filename/" + child.getName();
-                String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
-
-                RestTemplate restTemplate = new RestTemplate();
-
-                try {
-                    //get ip of node that file belongs to from the naming server
-                    ResponseEntity<String> response = restTemplate.exchange(
-                            uri, HttpMethod.POST, null, String.class);
-                    String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
-
-                    //get own IP
-                    InetAddress localHost = InetAddress.getLocalHost();           // (MAYBE GET FROM NODESERVICE?)
-
-                    //if ip the file belongs to in not from this node -> send to right node
-                    if (!ipOfNode.equals(localHost.getHostAddress())) {
-
-                        System.out.println("The file : "+ child.getName() + " Needs to be send to : " + ipOfNode);
-
-                        //this node isn't the right one -> send file to ip and save ip in register
-
-                        //should do check or execution if file transfer not completed!!!!
-                        ResponseEntity<String> check = sendFile(ipOfNode , (MultipartFile) child);
-                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
-
-                        //save ip to filename (reference)
-                        fileReferences.putSingle(child.getName() , ipOfNode);
-
-                    }
-                    else
-                        System.out.println("The file : " + child.getName() + " Is already on right node");
-
-                } catch (Exception e) {
-                    System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
-                }
+                fileAdded(child);
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
             fileCheckerThread.start();
@@ -101,28 +66,49 @@ public class ReplicationService {
 
     /**
      * Method fileAdded
-     * Gets called from FileChecker thread when file gets added to FILES_DIR
-     *
-     * @param filename name of file that is added
+     * Will check with naming server if file belongs to itself or if it needs replication
+     * Will also preform the replication through sendFile
+     * @param file  file that is added
      */
-    public void fileAdded(String filename){
+    public void fileAdded(File file){
 
-        //should do almost the same as start()  method
 
+        String mapping = "/node/by-filename/" + file.getName();
+        String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            //get ip of node that file belongs to from the naming server
+            ResponseEntity<String> response = restTemplate.exchange(
+                    uri, HttpMethod.POST, null, String.class);
+            String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
+
+            //get own IP
+            InetAddress localHost = InetAddress.getLocalHost();           // (MAYBE GET FROM NODESERVICE?)
+
+            //if ip the file belongs to in not from this node -> send to right node
+            if (!ipOfNode.equals(localHost.getHostAddress())) {
+
+                System.out.println("The file : "+ file.getName() + " Needs to be send to : " + ipOfNode);
+
+                //this node isn't the right one -> send file to ip and save ip in register
+
+                //should do check or execution if file transfer not completed!!!!
+                ResponseEntity<String> check = sendFile(ipOfNode , file);
+                System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
+                //save ip to filename (reference)
+                fileReferences.putSingle(file.getName() , ipOfNode);
+
+            }
+            else
+                System.out.println("The file : " + file.getName() + " Is already on right node");
+
+        } catch (Exception e) {
+            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     /**
@@ -132,7 +118,7 @@ public class ReplicationService {
      * @param file file to send to node
      * @return response of the node
      */
-    public ResponseEntity<String> sendFile(String ip ,MultipartFile file)  {
+    public ResponseEntity<String> sendFile(String ip ,File file)  {
 
 
         final String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file";
@@ -143,7 +129,7 @@ public class ReplicationService {
 
         // Create a MultiValueMap to hold the file data
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", file.getResource());  // Use the file's resource directly
+        body.add("file", new FileSystemResource(file)); // Wrap the File in FileSystemResource
 
         // Create HttpEntity with body and headers
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -164,11 +150,10 @@ public class ReplicationService {
      * Method getFile
      * Search for a file on the local disc (FILES_DIR)
      *
-     *
      * @param filename name of file to look for
      * @return ResponsEntity with ok and file if file is found, otherwise a ResponseStatusException
      */
-    public ResponseEntity<Resource> getFile(String filename)  {
+    public ResponseEntity<Resource> getFile(String filename , String ipOfRequester)  {
 
         Path path = Paths.get(FILES_DIR + filename);
 
@@ -186,6 +171,9 @@ public class ReplicationService {
             if (contentType == null) {
                 contentType = "application/octet-stream";  // Default fallback
             }
+
+            //add ip of the requester to references
+            fileReferences.putSingle(filename,ipOfRequester);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -232,14 +220,5 @@ public class ReplicationService {
                     .body("Failed to upload the file");
         }
     }
-
-
-
-
-
-
-
-
-
 
 }

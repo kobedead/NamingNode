@@ -1,5 +1,6 @@
 package ds.namingnote.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -10,6 +11,11 @@ import java.util.List;
 public class FileReference {
     String fileName;
     List<String> replicationNodeIP;
+
+    public FileReference(String fileName) {
+        this.fileName = fileName;
+        replicationNodeIP = new ArrayList<String>();
+    }
 
     public String getFileName() {
         return fileName;

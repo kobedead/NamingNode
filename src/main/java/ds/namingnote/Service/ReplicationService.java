@@ -2,6 +2,7 @@ package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Utilities.Utilities;
+import ds.namingnote.model.FileReference;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;

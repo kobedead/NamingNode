@@ -31,8 +31,10 @@ public class ReplicationService {
 
     private Thread fileCheckerThread;
 
+    /// Keeps track of files that originally existed on this node, but were sent to another
     private LocalJsonMap<String , String> whoHasRepFile;
 
+    /// Keeps track of files that have been replicated to this node by another node
     private LocalJsonMap<String, String> localRepFiles ;
 
 
@@ -267,6 +269,13 @@ public class ReplicationService {
 
                 //if name of file in whoHasRepFile
                 if (whoHasRepFile.containsKey(child.getName())){
+                    // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
+                    // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
+                    // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
+                    // reference it has to the Ip of this node that is shutting down
+
+
+
                     //not clear to me what needs to be done here exactly
 
                     //or we remove all the files from the whole network
@@ -305,8 +314,13 @@ public class ReplicationService {
     }
 
 
-
-
-
-
+    public ResponseEntity<String> removeLocalReference(String fileName, String ipOfRef) {
+        try {
+            localRepFiles.removeValue(fileName , ipOfRef);
+            return ResponseEntity.ok("File removed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to remove local reference from owner of the file");
+        }
+    }
 }

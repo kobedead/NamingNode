@@ -62,6 +62,12 @@ public class NodeController {
     }
 
 
+    @PutMapping("/file/removeLocalReference/{fileName}")
+    public ResponseEntity<String> removeLocalReference(@RequestParam String fileName, @RequestBody String ipOfRef)  {
+        return replicationService.removeLocalReference(fileName, ipOfRef);
+    }
+
+
 
 
 

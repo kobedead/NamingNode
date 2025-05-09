@@ -323,6 +323,10 @@ public class NodeService {
 
     public void shutdown(){
 
+        //before remove node out of network -> file transfer
+        replicationService.shutdown();
+
+        //remove node from network
         setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
         setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
 

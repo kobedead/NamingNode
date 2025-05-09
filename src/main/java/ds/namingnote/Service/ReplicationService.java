@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.model.LocalJsonMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -30,10 +31,19 @@ public class ReplicationService {
 
     private Thread fileCheckerThread;
 
-    private LocalJsonMap<String , String> fileReferences;
+    private LocalJsonMap<String , String> whoHasRepFile;
+
+    private LocalJsonMap<String, String> localRepFiles ;
+
+
+    @Autowired
+    private NodeService nodeService;
 
     public ReplicationService() {
-        this.fileReferences = new LocalJsonMap<>(MAP_PATH);
+        this.whoHasRepFile = new LocalJsonMap<>(whoHas_MAP_PATH);
+        this.localRepFiles = new LocalJsonMap<>(localRep_MAP_PATH);
+
+
         fileCheckerThread = new Thread(new FileChecker(this));
 
     }
@@ -95,11 +105,11 @@ public class ReplicationService {
                 //this node isn't the right one -> send file to ip and save ip in register
 
                 //should do check or execution if file transfer not completed!!!!
-                ResponseEntity<String> check = sendFile(ipOfNode , file);
+                ResponseEntity<String> check = sendFile(ipOfNode , file , null);
                 System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
                 //save ip to filename (reference)
-                fileReferences.putSingle(file.getName() , ipOfNode);
+                whoHasRepFile.putSingle(file.getName() , ipOfNode);
 
             }
             else
@@ -116,12 +126,19 @@ public class ReplicationService {
      * Sends a file to a node
      * @param ip ip of node to send to
      * @param file file to send to node
+     * @param givenIp if not null -> this will be added as given ip to request (see controller)
      * @return response of the node
      */
-    public ResponseEntity<String> sendFile(String ip ,File file)  {
+    public ResponseEntity<String> sendFile(String ip ,File file , String givenIp  )  {
+        final String uri;
+
+        //this is done to make the reference of files customizable and not only senders
+        if (givenIp != null){
+            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+givenIp;
+        }else
+            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file";
 
 
-        final String uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file";
 
         // Create headers for multipart form-data
         HttpHeaders headers = new HttpHeaders();
@@ -173,7 +190,7 @@ public class ReplicationService {
             }
 
             //add ip of the requester to references
-            fileReferences.putSingle(filename,ipOfRequester);
+            whoHasRepFile.putSingle(filename,ipOfRequester);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -194,7 +211,7 @@ public class ReplicationService {
      * @return ResponsEntity with status of saving operation
      */
 
-    public ResponseEntity<String> putFile(MultipartFile file)  {
+    public ResponseEntity<String> putFile(MultipartFile file , String ipOfRequester)  {
 
         try {
 
@@ -212,6 +229,10 @@ public class ReplicationService {
             System.out.println("File saved to: " + destFile.getAbsolutePath());
             file.transferTo(destFile.toPath());
 
+            //here we need to save where the file came from (we store the replication)
+            localRepFiles.putSingle(fileName , ipOfRequester);
+
+
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
 
         } catch (Exception e) {
@@ -220,5 +241,69 @@ public class ReplicationService {
                     .body("Failed to upload the file");
         }
     }
+
+
+    public void shutdown(){
+
+        //so transfer replicated files and references (localRepFiles) to previous node,
+        //so we need to send a file and ip of owner ig
+
+        //so we can use uploadFileGivenIP from the controller
+
+        File dir = new File(FILES_DIR);  //get files dir
+        File[] directoryListing = dir.listFiles();
+        if (directoryListing != null) {
+            //loop over files and check if reapplication
+            for (File child : directoryListing) {
+                //if name of file in replication files
+                if (localRepFiles.containsKey(child.getName())){
+                    //send to previous node with ip found in map                                //FIX THIS!!!!
+                    sendFile(nodeService.previousNode.getIP() , child , localRepFiles.get(child.getName()).get(0));
+
+                    //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY ON SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
+
+                }
+
+                //if name of file in
+
+
+
+
+
+
+
+            }
+            //here all the files should be checked, so a thread can be started to check for updated in the file DIR
+            fileCheckerThread.start();
+
+        } else {
+            System.out.println("Fault with directory : " + FILES_DIR);
+        }
+
+
+
+
+
+
+
+
+
+        //if previous node already has file as local file -> again previous node of that node
+
+
+        //also go over the reference map and warn the replicated nodes that the
+
+
+
+
+
+
+
+    }
+
+
+
+
+
 
 }

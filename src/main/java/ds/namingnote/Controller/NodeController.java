@@ -35,11 +35,36 @@ public class NodeController {
         return replicationService.getFile(filename, request.getRemoteAddr()); // get the file
     }
 
-
+    /**
+     * This mapping will put a file to local storage and use the sender ip as
+     * reference of where the file came from
+     *
+     * @param file file to save to node
+     * @param request request to get senders ip
+     * @return
+     */
     @PostMapping("/file")
-    public ResponseEntity<String> downloadFile(@RequestParam("file") MultipartFile file)  {
-        return replicationService.putFile(file);
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file , HttpServletRequest request)  {
+        return replicationService.putFile(file , request.getRemoteAddr());
     }
+
+    /**
+     * This mapping will put a file to local storage and use A GIVEN IP as
+     * reference of where the file came from
+     *
+     * @param file file to save to node
+     * @param ipOfRef given ip as refrence
+     * @return
+     */
+    @PostMapping("/file/{ipOfRef}")
+    public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
+        return replicationService.putFile(file , ipOfRef );
+    }
+
+
+
+
+
 
 
     @PostMapping("/id/next")

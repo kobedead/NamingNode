@@ -260,11 +260,32 @@ public class ReplicationService {
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.previousNode.getIP() , child , localRepFiles.get(child.getName()).get(0));
 
-                    //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY ON SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
+                    //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
+                    //MAYBE ALSO CHECK FOR LOOPS??
 
                 }
 
-                //if name of file in
+                //if name of file in whoHasRepFile
+                if (whoHasRepFile.containsKey(child.getName())){
+                    //not clear to me what needs to be done here exactly
+
+                    //or we remove all the files from the whole network
+                    //-> go over all files and notify all the linked ip's
+
+
+                    //or we notify the replicated nodes that the download location has been removed
+                    //so one of the replicated nodes becomes the owner and the references need to be updated
+
+
+                    //or we need to also move the file to previous node, but this seems more stupid
+
+
+
+                }else{
+                    //nobody has a replicated file -> file can be removed
+                    //or do nothing and shut down the node ig
+                }
+
 
 
 
@@ -279,24 +300,6 @@ public class ReplicationService {
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-
-
-
-
-
-
-
-
-
-        //if previous node already has file as local file -> again previous node of that node
-
-
-        //also go over the reference map and warn the replicated nodes that the
-
-
-
-
-
 
 
     }

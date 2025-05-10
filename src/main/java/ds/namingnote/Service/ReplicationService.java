@@ -97,6 +97,7 @@ public class ReplicationService {
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.POST, null, String.class);
             String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
+            System.out.println("File " + file.getName() + " should be added to " + ipOfNode + " according to NamingServer");
 
             //get own IP
             InetAddress localHost = InetAddress.getLocalHost();           // (MAYBE GET FROM NODESERVICE?)
@@ -120,7 +121,7 @@ public class ReplicationService {
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
         } catch (Exception e) {
-            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
+            System.out.println("Exception in communication between nodes (fileAdded function) " + e.getMessage());
         }
     }
 

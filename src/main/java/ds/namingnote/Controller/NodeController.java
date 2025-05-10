@@ -62,6 +62,13 @@ public class NodeController {
     }
 
 
+    /**
+     * This mapping will remove the "download reference" of a node to which a file
+     * was replicated in the past. Corresponds to part (3/3 shutdown in the slides)
+     * @param fileName name of file of which the original "download location" will be shutting down
+     * @param ipOfRef name of IP that is the "download location" of the file
+     * @return HTTP body
+     */
     @PutMapping("/file/removeLocalReference/{fileName}")
     public ResponseEntity<String> removeLocalReference(@RequestParam String fileName, @RequestBody String ipOfRef)  {
         return replicationService.removeLocalReference(fileName, ipOfRef);

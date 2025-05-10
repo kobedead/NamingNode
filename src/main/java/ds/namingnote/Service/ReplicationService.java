@@ -273,7 +273,18 @@ public class ReplicationService {
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
                     // reference it has to the Ip of this node that is shutting down
+                    String mapping = "/file/removeLocalReference/" + child.getName();
+                    String uri = "http://"+whoHasRepFile.get(child.getName()).get(0) +":"+ NAMINGNODE_PORT + mapping;
 
+                    try {
+                        RestTemplate restTemplate = new RestTemplate();
+
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                uri, HttpMethod.POST, new HttpEntity<>(InetAddress.getLocalHost()), String.class);
+                        System.out.println(response.getBody());
+                    } catch (Exception e) {
+                        System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());
+                    }
 
 
                     //not clear to me what needs to be done here exactly

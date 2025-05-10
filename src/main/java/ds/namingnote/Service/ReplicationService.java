@@ -4,6 +4,7 @@ import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.model.LocalJsonMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -39,6 +40,7 @@ public class ReplicationService {
 
 
     @Autowired
+    @Lazy
     private NodeService nodeService;
 
     public ReplicationService() {

@@ -87,13 +87,14 @@ public class ReplicationService {
     public void fileAdded(File file){
 
 
-        String mapping = "namingserver/node/by-filename/" + file.getName();
-        String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
+        String mapping = "/namingserver/node/by-filename/" + file.getName();
+        String uri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping;
 
         RestTemplate restTemplate = new RestTemplate();
 
         try {
             //get ip of node that file belongs to from the naming server
+            System.out.println("Calling to: " + uri);
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.GET, null, String.class);
             String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to

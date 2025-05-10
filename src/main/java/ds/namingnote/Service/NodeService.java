@@ -251,9 +251,9 @@ public class NodeService {
 
         try {
             String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
+            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getIP() +" successful: " + response);
         } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
+            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getIP() +" successful: " + e.getMessage());
             handleFailure(node);
         }
     }

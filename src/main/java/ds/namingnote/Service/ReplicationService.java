@@ -280,6 +280,8 @@ public class ReplicationService {
                     String mapping = "node/file/removeLocalReference/" + child.getName();
                     String uri = "http://" + whoHasRepFile.get(child.getName()).get(0) +":" + NAMINGNODE_PORT + mapping;
 
+                    System.out.println("Calling to: " + uri);
+
                     try {
                         RestTemplate restTemplate = new RestTemplate();
 

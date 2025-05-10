@@ -151,7 +151,7 @@ public class NodeService {
     public ResponseEntity<String> setOtherNextNode(String ip , Node node, String name){
 
         String mapping = "/node/id/next";
-        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
+        String uri = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + mapping;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -159,7 +159,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherNextID for node" + name + " on ip " + ip);
+        System.out.println("setOtherNextID for node" + name + " on ip " + ip + " with Node object: ID=" + node.getID() + ", IP=" + node.getIP());
         System.out.println("Call to " + uri);
 
         try {
@@ -186,7 +186,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
+        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip + "with Node object: ID=" + node.getID() + ", IP=" + node.getIP());
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(

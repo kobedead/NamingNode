@@ -95,7 +95,7 @@ public class ReplicationService {
         try {
             //get ip of node that file belongs to from the naming server
             ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
+                    uri, HttpMethod.GET, null, String.class);
             String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
             System.out.println("File " + file.getName() + " should be added to " + ipOfNode + " according to NamingServer");
 

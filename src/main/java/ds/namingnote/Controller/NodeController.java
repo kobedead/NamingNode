@@ -81,7 +81,7 @@ public class NodeController {
 
 
     @PostMapping("/id/next")
-    public ResponseEntity<String> updateNextNode(@RequestParam Node nextNode)  {
+    public ResponseEntity<String> updateNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
         nodeService.setNextNode(nextNode);
         return ResponseEntity.ok("NextNode updated succesfully");
@@ -89,7 +89,7 @@ public class NodeController {
     }
 
     @PostMapping("/id/previous")
-    public ResponseEntity<String> updatePreviousNode(@RequestParam Node previousNode)  {
+    public ResponseEntity<String> updatePreviousNode(@RequestBody Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);
         nodeService.setPreviousNode(previousNode);
         return ResponseEntity.ok("PreviousNode updated succesfully");

@@ -277,7 +277,7 @@ public class ReplicationService {
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
                     // reference it has to the Ip of this node that is shutting down
-                    String mapping = "node/file/removeLocalReference/" + child.getName();
+                    String mapping = "/node/file/removeLocalReference/" + child.getName();
                     String uri = "http://" + whoHasRepFile.get(child.getName()).get(0) +":" + NAMINGNODE_PORT + mapping;
 
                     System.out.println("Calling to: " + uri);

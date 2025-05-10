@@ -334,10 +334,17 @@ public class ReplicationService {
     public ResponseEntity<String> removeLocalReference(String fileName, String ipOfRef) {
         try {
             localRepFiles.removeValue(fileName , ipOfRef);
-            return ResponseEntity.ok("File removed successfully");
+            String message = String.format("Reference %s removed successfully for file: %s " +
+                    "\nIn other words: %s is no longer an available download location for file: %s",
+                    ipOfRef, fileName, ipOfRef, fileName
+            );
+            return ResponseEntity.ok(message);
         } catch (Exception e) {
+            String message = String.format("Failed to remove reference %s for file: %s ",
+                    ipOfRef, fileName, ipOfRef, fileName
+            );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to remove local reference from owner of the file");
+                    .body(message);
         }
     }
 }

@@ -307,7 +307,7 @@ public class ReplicationService {
 
 
 
-                }else{
+                } else {
                     //nobody has a replicated file -> file can be removed
                     //or do nothing and shut down the node ig
                 }
@@ -321,7 +321,7 @@ public class ReplicationService {
 
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            fileCheckerThread.start();
+            //fileCheckerThread.start();
 
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);

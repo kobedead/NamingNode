@@ -286,7 +286,7 @@ public class ReplicationService {
                         RestTemplate restTemplate = new RestTemplate();
 
                         ResponseEntity<String> response = restTemplate.exchange(
-                                uri, HttpMethod.PUT, new HttpEntity<>(InetAddress.getLocalHost()), String.class);
+                                uri, HttpMethod.PUT, new HttpEntity<>(InetAddress.getLocalHost().getHostAddress()), String.class);
                         System.out.println(response.getBody());
                     } catch (Exception e) {
                         System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());

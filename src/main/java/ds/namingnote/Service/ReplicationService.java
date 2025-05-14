@@ -257,6 +257,7 @@ public class ReplicationService {
             for (File child : directoryListing) {
                 //if name of file in replication files
                 if (localRepFiles.containsKey(child.getName())){
+
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.previousNode.getIP() , child , localRepFiles.get(child.getName()).get(0));
 

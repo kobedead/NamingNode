@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.model.LocalJsonMap;
+import jakarta.validation.constraints.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
@@ -29,23 +30,19 @@ import static ds.namingnote.Config.NNConf.*;
 public class ReplicationService {
 
 
-    private Thread fileCheckerThread;
+    private Thread fileCheckerThread = null;
 
-    private LocalJsonMap<String , String> whoHasRepFile;
+    private LocalJsonMap<String , String> whoReplicatedMyFiles;
 
-    private LocalJsonMap<String, String> localRepFiles ;
+    private LocalJsonMap<String, String> filesIReplicated ;
 
 
     @Autowired
     private NodeService nodeService;
 
     public ReplicationService() {
-        this.whoHasRepFile = new LocalJsonMap<>(whoHas_MAP_PATH);
-        this.localRepFiles = new LocalJsonMap<>(localRep_MAP_PATH);
-
-
-        fileCheckerThread = new Thread(new FileChecker(this));
-
+        this.whoReplicatedMyFiles = new LocalJsonMap<>(whoHas_MAP_PATH);
+        this.filesIReplicated = new LocalJsonMap<>(localRep_MAP_PATH);
     }
 
 
@@ -57,7 +54,6 @@ public class ReplicationService {
      */
     public void start(){
 
-
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -66,8 +62,10 @@ public class ReplicationService {
                 fileAdded(child);
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            fileCheckerThread.start();
-
+            if (fileCheckerThread != null) {
+                fileCheckerThread = new Thread(new FileChecker(this));
+                fileCheckerThread.start();
+            }
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
@@ -89,6 +87,7 @@ public class ReplicationService {
         RestTemplate restTemplate = new RestTemplate();
 
         try {
+
             //get ip of node that file belongs to from the naming server
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.POST, null, String.class);
@@ -99,6 +98,14 @@ public class ReplicationService {
 
             //if ip the file belongs to in not from this node -> send to right node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
+                if(whoReplicatedMyFiles.containsKey(file.getName())){
+                    if (whoReplicatedMyFiles.get(file.getName()).contains(ipOfNode)){
+                        //if this is the case the node where we want to send the file already has the file
+                        //-> we can skip this
+                        return;
+                    }
+                }
+
 
                 System.out.println("The file : "+ file.getName() + " Needs to be send to : " + ipOfNode);
 
@@ -109,7 +116,7 @@ public class ReplicationService {
                 System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
                 //save ip to filename (reference)
-                whoHasRepFile.putSingle(file.getName() , ipOfNode);
+                whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
 
             }
             else
@@ -190,7 +197,7 @@ public class ReplicationService {
             }
 
             //add ip of the requester to references
-            whoHasRepFile.putSingle(filename,ipOfRequester);
+            whoReplicatedMyFiles.putSingle(filename,ipOfRequester);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -230,7 +237,7 @@ public class ReplicationService {
             file.transferTo(destFile.toPath());
 
             //here we need to save where the file came from (we store the replication)
-            localRepFiles.putSingle(fileName , ipOfRequester);
+            filesIReplicated.putSingle(fileName , ipOfRequester);
 
 
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
@@ -256,10 +263,10 @@ public class ReplicationService {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                if (localRepFiles.containsKey(child.getName())){
+                if (filesIReplicated.containsKey(child.getName())){
 
                     //send to previous node with ip found in map                                //FIX THIS!!!!
-                    sendFile(nodeService.previousNode.getIP() , child , localRepFiles.get(child.getName()).get(0));
+                    sendFile(nodeService.previousNode.getIP() , child , filesIReplicated.get(child.getName()).get(0));
 
                     //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
                     //MAYBE ALSO CHECK FOR LOOPS??
@@ -267,7 +274,7 @@ public class ReplicationService {
                 }
 
                 //if name of file in whoHasRepFile
-                if (whoHasRepFile.containsKey(child.getName())){
+                if (whoReplicatedMyFiles.containsKey(child.getName())){
                     //not clear to me what needs to be done here exactly
 
                     //or we remove all the files from the whole network

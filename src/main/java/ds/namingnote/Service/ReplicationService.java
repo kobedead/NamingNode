@@ -261,10 +261,10 @@ public class ReplicationService {
         if (directoryListing != null) {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
-                //if name of file in replication files
+                // If the file is a file that I have replicated, send this replication to the previous node
                 if (localRepFiles.containsKey(child.getName())){
                     //send to previous node with ip found in map                                //FIX THIS!!!!
-                    sendFile(nodeService.previousNode.getIP() , child , localRepFiles.get(child.getName()).get(0));
+                    sendFile(nodeService.getPreviousNode().getIP() , child , localRepFiles.get(child.getName()).get(0));
 
                     //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
                     //MAYBE ALSO CHECK FOR LOOPS??
@@ -311,14 +311,6 @@ public class ReplicationService {
                     //nobody has a replicated file -> file can be removed
                     //or do nothing and shut down the node ig
                 }
-
-
-
-
-
-
-
-
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
                 //fileCheckerThread.start();

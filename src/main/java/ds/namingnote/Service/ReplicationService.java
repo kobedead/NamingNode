@@ -321,7 +321,7 @@ public class ReplicationService {
 
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            //fileCheckerThread.start();
+                //fileCheckerThread.start();
 
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
@@ -332,19 +332,18 @@ public class ReplicationService {
 
 
     public ResponseEntity<String> removeLocalReference(String fileName, String ipOfRef) {
-        try {
-            localRepFiles.removeValue(fileName , ipOfRef);
+        boolean removed = localRepFiles.removeValue(fileName, ipOfRef);
+        if (removed) {
             String message = String.format("Reference %s removed successfully for file: %s " +
-                    "\nIn other words: %s is no longer an available download location for file: %s",
+                            "\nIn other words: %s is no longer an available download location for file: %s",
                     ipOfRef, fileName, ipOfRef, fileName
             );
             return ResponseEntity.ok(message);
-        } catch (Exception e) {
+        } else {
             String message = String.format("Failed to remove reference %s for file: %s ",
-                    ipOfRef, fileName, ipOfRef, fileName
+                    ipOfRef, fileName
             );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(message);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
         }
     }
 }

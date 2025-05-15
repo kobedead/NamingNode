@@ -109,6 +109,26 @@ public class LocalJsonMap<K, V> extends HashMap<K, List<V>> {
         }
     }
 
+    /**
+     * Deletes the JSON file associated with this map.
+     */
+    public void deleteJsonFile() {
+        File file = new File(FILE_PATH);
+        if (file.exists()) {
+            if (file.delete()) {
+                System.out.println("Successfully deleted JSON file: " + FILE_PATH);
+            } else {
+                System.err.println("Failed to delete JSON file: " + FILE_PATH);
+                // Consider logging this failure appropriately
+            }
+        } else {
+            System.out.println("JSON file does not exist, no need to delete: " + FILE_PATH);
+        }
+    }
+
+
+
+
 }
 
 

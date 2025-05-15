@@ -3,6 +3,7 @@ package ds.namingnote.Controller;
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
+import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.FileNotFoundException;
+
 import java.util.logging.Logger;
 
 @RestController
@@ -105,6 +106,19 @@ public class NodeController {
         nodeService.shutdown();
 
     }
+
+
+    @PutMapping("/reference/localGone")
+    public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO){
+        replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+
+    }
+    @PutMapping("/reference/referenceGone")
+    public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO){
+        replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+
+    }
+
 
 
 

@@ -1,7 +1,7 @@
 package ds.namingnote.Config;
 
 
-public class NNConf {
+public class    NNConf {
 
     ////////////NamingNode specs
     public static final int NAMINGNODE_PORT = 8082;

@@ -22,8 +22,8 @@ public class NNConf {
 
 
     //reference map path
-    public static final String whoHas_MAP_PATH = "src/main/resources/whoHas_map.json";
-    public static final String localRep_MAP_PATH = "src/main/resources/localRep_map.json";
+    public static final String whoHas_MAP_PATH = "src/main/resources/WhoReplicatedMyFiles.json";
+    public static final String localRep_MAP_PATH = "src/main/resources/FilesIReplicated.json";
 
 
 

@@ -104,20 +104,22 @@ public class NodeService {
         int nameHash = Utilities.mapHash(name);
         Node incommingNode = new Node(nameHash , ip);
 
+
+
         //new node is the only one with me on network
         if (currentNode == nextNode && currentNode == previousNode){
 
             //now there are 2 node, so they both need to set their neighbors to each other.
 
             //set previous and next of other node
-            setOtherNextNode(ip , nextNode, name);
-            setOtherPreviousNode(ip , nextNode, name);
+            setOtherNextNode(ip, nextNode, name);
+            setOtherPreviousNode(ip, nextNode, name);
 
             //set previous and next of this node
             nextNode = incommingNode;
             previousNode = incommingNode;
 
-            System.out.println("Node : "+currentNode.getID() +" .Multicast Processed, 2 Nodes On Network");
+            System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
             return;
         }
 
@@ -140,10 +142,9 @@ public class NodeService {
             setNextNode(incommingNode);
 
             System.out.println("Node : "+ currentNode.getID() +" .Multicast Processed, new next node : "+ name);
-
-
         }
 
+        replicationService.start();
     }
 
 
@@ -151,7 +152,7 @@ public class NodeService {
     public ResponseEntity<String> setOtherNextNode(String ip , Node node, String name){
 
         String mapping = "/node/id/next";
-        String uri = "http://" + ip + ":" + NNConf.NAMINGNODE_PORT + mapping;
+        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -159,7 +160,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherNextID for node" + name + " on ip " + ip + " with Node object: ID=" + node.getID() + ", IP=" + node.getIP());
+        System.out.println("setOtherNextID for node" + name + " on ip " + ip);
         System.out.println("Call to " + uri);
 
         try {
@@ -186,7 +187,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip + "with Node object: ID=" + node.getID() + ", IP=" + node.getIP());
+        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
@@ -251,9 +252,9 @@ public class NodeService {
 
         try {
             String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getIP() +" successful: " + response);
+            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
         } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getIP() +" successful: " + e.getMessage());
+            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
             handleFailure(node);
         }
     }

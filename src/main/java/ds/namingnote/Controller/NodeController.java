@@ -62,26 +62,13 @@ public class NodeController {
     }
 
 
-    /**
-     * This mapping will remove the "download reference" of a node to which a file
-     * was replicated in the past. Corresponds to part (3/3 shutdown in the slides)
-     * @param fileName name of file of which the original "download location" will be shutting down
-     * @param ipOfRef name of IP that is the "download location" of the file
-     * @return HTTP body
-     */
-    @PutMapping("/file/removeLocalReference/{fileName}")
-    public ResponseEntity<String> removeLocalReference(@PathVariable String fileName, @RequestBody String ipOfRef)  {
-        return replicationService.removeLocalReference(fileName, ipOfRef);
-    }
-
-
 
 
 
 
 
     @PostMapping("/id/next")
-    public ResponseEntity<String> updateNextNode(@RequestBody Node nextNode)  {
+    public ResponseEntity<String> updateNextNode(@RequestParam Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
         nodeService.setNextNode(nextNode);
         return ResponseEntity.ok("NextNode updated succesfully");
@@ -89,7 +76,7 @@ public class NodeController {
     }
 
     @PostMapping("/id/previous")
-    public ResponseEntity<String> updatePreviousNode(@RequestBody Node previousNode)  {
+    public ResponseEntity<String> updatePreviousNode(@RequestParam Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);
         nodeService.setPreviousNode(previousNode);
         return ResponseEntity.ok("PreviousNode updated succesfully");

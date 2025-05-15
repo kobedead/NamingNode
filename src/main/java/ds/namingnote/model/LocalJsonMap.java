@@ -46,6 +46,15 @@ public class LocalJsonMap<K, V> extends HashMap<K, List<V>> {
         return tempList; // Return the modified list
     }
 
+    public void containsSingleValue(V value){
+
+
+
+
+
+    }
+
+
 
     public void addValue(K key, V value) {
         List<V> list = get(key);

@@ -121,6 +121,7 @@ public class NodeService {
             previousNode = incommingNode;
 
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
+            replicationService.start();
             return;
         }
 

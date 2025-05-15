@@ -308,7 +308,7 @@ public class ReplicationService {
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.getPreviousNode().getIP(), child, filesIReplicated.get(child.getName()).get(0));
                     String mapping = "/node/reference/referenceGone";
-                    uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
+                    uri = "http://" + filesIReplicated.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
 
                     System.out.println("Calling to: " + uri);
 

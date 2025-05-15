@@ -62,8 +62,12 @@ public class ReplicationService {
             for (File child : directoryListing) {
                 fileAdded(child);
             }
+            System.out.println("All Files are checked and replicated if needed");
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
+            System.out.println(fileCheckerThread);
             if (fileCheckerThread != null) {
+                System.out.println("Creating new file checker and starting thread");
+
                 fileCheckerThread = new Thread(new FileChecker(this));
                 fileCheckerThread.start();
             }
@@ -288,22 +292,21 @@ public class ReplicationService {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                if (filesIReplicated.containsKey(child.getName())){
+                if (filesIReplicated.containsKey(child.getName())) {
                     //send to previous node with ip found in map                                //FIX THIS!!!!
-                    sendFile(nodeService.previousNode.getIP() , child , filesIReplicated.get(child.getName()).get(0));
-
+                    sendFile(nodeService.previousNode.getIP(), child, filesIReplicated.get(child.getName()).get(0));
 
 
                 }
 
                 //if name of file in whoHasRepFile
-                if (whoReplicatedMyFiles.containsKey(child.getName())){
+                if (whoReplicatedMyFiles.containsKey(child.getName())) {
                     // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
                     // reference it has to the Ip of this node that is shutting down
                     String mapping = "/node/file/removeLocalReference/" + child.getName();
-                    String uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) +":" + NAMINGNODE_PORT + mapping;
+                    String uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
 
                     System.out.println("Calling to: " + uri);
 
@@ -318,41 +321,17 @@ public class ReplicationService {
                     }
 
 
-                    //not clear to me what needs to be done here exactly
-
-                    //or we remove all the files from the whole network
-                    //-> go over all files and notify all the linked ip's
-
-
-                    //or we notify the replicated nodes that the download location has been removed
-                    //so one of the replicated nodes becomes the owner and the references need to be updated
-
-
-                    //or we need to also move the file to previous node, but this seems more stupid
-
-
-
                 } else {
                     //nobody has a replicated file -> file can be removed
                     //or do nothing and shut down the node ig
                 }
 
 
-
-
-
-
-
-
             }
-            //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            //fileCheckerThread.start();
 
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-
-
     }
 
 

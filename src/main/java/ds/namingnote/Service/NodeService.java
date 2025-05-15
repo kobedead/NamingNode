@@ -112,6 +112,7 @@ public class NodeService {
             //now there are 2 node, so they both need to set their neighbors to each other.
 
             //set previous and next of other node
+
             setOtherNextNode(ip, nextNode, name);
             setOtherPreviousNode(ip, nextNode, name);
 
@@ -135,6 +136,8 @@ public class NodeService {
 
         }
         if (nameHash < nextNode.getID()){
+
+
             //this node will be previousID of new node
             setOtherPreviousNode(ip , currentNode, name);
 

@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import static ds.namingnote.Config.NNConf.*;
 
@@ -134,19 +135,21 @@ public class ReplicationService {
     /**
      * Method sendFile
      * Sends a file to a node
-     * @param ip ip of node to send to
+     * @param ipToSendTo ip of node to send to
      * @param file file to send to node
-     * @param givenIp if not null -> this will be added as given ip to request (see controller)
+     * @param IpOfRefrenceToSet if not null -> this will be added as given ip to request (see controller)
      * @return response of the node
      */
-    public ResponseEntity<String> sendFile(String ip ,File file , String givenIp  )  {
+    public ResponseEntity<String> sendFile(String ipToSendTo ,File file , String IpOfRefrenceToSet  )  {
         final String uri;
 
         //this is done to make the reference of files customizable and not only senders
-        if (givenIp != null){
-            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+givenIp;
+        if (IpOfRefrenceToSet != null){
+            //send file and also send ip that is the reference to the file
+            uri = "http://"+ipToSendTo+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+IpOfRefrenceToSet;
         }else
-            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file";
+            //only send file -> refrence ip will be ip of sender (this node)
+            uri = "http://"+ipToSendTo+":"+NNConf.NAMINGNODE_PORT+"/node/file";
 
 
 
@@ -221,7 +224,25 @@ public class ReplicationService {
      * @return ResponsEntity with status of saving operation
      */
 
-    public ResponseEntity<String> putFile(MultipartFile file , String ipOfRequester)  {
+    public ResponseEntity<String> putFile(MultipartFile file , String ipOfRefrence)  {
+
+        //this is for shutdown purposes
+
+        //if i own the file as a reference -> there is a refrence so its all good
+        if (filesIReplicated.containsKey(file.getName())){
+            //I already own a replicate of the file nothing
+            return ResponseEntity.status(HttpStatus.CONTINUE)
+                    .body("I have a replicate already");
+        }
+
+        if (whoReplicatedMyFiles.containsKey(file.getName())){
+            //here this node has the file locally -> send to previous again
+            sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
+            return ResponseEntity.status(HttpStatus.CONTINUE)
+                    .body("I have send the file to my previous also");
+        }
+
+        ////////////
 
         try {
 
@@ -240,7 +261,7 @@ public class ReplicationService {
             file.transferTo(destFile.toPath());
 
             //here we need to save where the file came from (we store the replication)
-            filesIReplicated.putSingle(fileName , ipOfRequester);
+            filesIReplicated.putSingle(fileName , ipOfRefrence);
 
 
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
@@ -251,6 +272,10 @@ public class ReplicationService {
                     .body("Failed to upload the file");
         }
     }
+
+
+
+
 
 
     public void shutdown(){
@@ -267,12 +292,10 @@ public class ReplicationService {
             for (File child : directoryListing) {
                 //if name of file in replication files
                 if (filesIReplicated.containsKey(child.getName())){
-
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.getPreviousNode().getIP() , child , filesIReplicated.get(child.getName()).get(0));
 
-                    //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
-                    //MAYBE ALSO CHECK FOR LOOPS??
+
 
                 }
 
@@ -316,6 +339,14 @@ public class ReplicationService {
                     //nobody has a replicated file -> file can be removed
                     //or do nothing and shut down the node ig
                 }
+
+
+
+
+
+
+
+
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
                 //fileCheckerThread.start();

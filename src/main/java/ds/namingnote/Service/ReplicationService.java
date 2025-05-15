@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import static ds.namingnote.Config.NNConf.*;
 
@@ -131,19 +132,21 @@ public class ReplicationService {
     /**
      * Method sendFile
      * Sends a file to a node
-     * @param ip ip of node to send to
+     * @param ipToSendTo ip of node to send to
      * @param file file to send to node
-     * @param givenIp if not null -> this will be added as given ip to request (see controller)
+     * @param IpOfRefrenceToSet if not null -> this will be added as given ip to request (see controller)
      * @return response of the node
      */
-    public ResponseEntity<String> sendFile(String ip ,File file , String givenIp  )  {
+    public ResponseEntity<String> sendFile(String ipToSendTo ,File file , String IpOfRefrenceToSet  )  {
         final String uri;
 
         //this is done to make the reference of files customizable and not only senders
-        if (givenIp != null){
-            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+givenIp;
+        if (IpOfRefrenceToSet != null){
+            //send file and also send ip that is the reference to the file
+            uri = "http://"+ipToSendTo+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+IpOfRefrenceToSet;
         }else
-            uri = "http://"+ip+":"+NNConf.NAMINGNODE_PORT+"/node/file";
+            //only send file -> refrence ip will be ip of sender (this node)
+            uri = "http://"+ipToSendTo+":"+NNConf.NAMINGNODE_PORT+"/node/file";
 
 
 
@@ -218,7 +221,25 @@ public class ReplicationService {
      * @return ResponsEntity with status of saving operation
      */
 
-    public ResponseEntity<String> putFile(MultipartFile file , String ipOfRequester)  {
+    public ResponseEntity<String> putFile(MultipartFile file , String ipOfRefrence)  {
+
+        //this is for shutdown purposes
+
+        //if i own the file as a reference -> there is a refrence so its all good
+        if (filesIReplicated.containsKey(file.getName())){
+            //I already own a replicate of the file nothing
+            return ResponseEntity.status(HttpStatus.CONTINUE)
+                    .body("I have a replicate already");
+        }
+
+        if (whoReplicatedMyFiles.containsKey(file.getName())){
+            //here this node has the file locally -> send to previous again
+            sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
+            return ResponseEntity.status(HttpStatus.CONTINUE)
+                    .body("I have send the file to my previous also");
+        }
+
+        ////////////
 
         try {
 
@@ -237,7 +258,7 @@ public class ReplicationService {
             file.transferTo(destFile.toPath());
 
             //here we need to save where the file came from (we store the replication)
-            filesIReplicated.putSingle(fileName , ipOfRequester);
+            filesIReplicated.putSingle(fileName , ipOfRefrence);
 
 
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
@@ -248,6 +269,10 @@ public class ReplicationService {
                     .body("Failed to upload the file");
         }
     }
+
+
+
+
 
 
     public void shutdown(){
@@ -264,17 +289,35 @@ public class ReplicationService {
             for (File child : directoryListing) {
                 //if name of file in replication files
                 if (filesIReplicated.containsKey(child.getName())){
-
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.previousNode.getIP() , child , filesIReplicated.get(child.getName()).get(0));
 
-                    //WE NEED TO ALSO CHECK IF GOTTEN FILE IS ALREADY SAVED ON NODE, IF IT IS -> SEND TO PREVIOUS AGAIN
-                    //MAYBE ALSO CHECK FOR LOOPS??
+
 
                 }
 
                 //if name of file in whoHasRepFile
                 if (whoReplicatedMyFiles.containsKey(child.getName())){
+                    // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
+                    // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
+                    // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
+                    // reference it has to the Ip of this node that is shutting down
+                    String mapping = "/node/file/removeLocalReference/" + child.getName();
+                    String uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) +":" + NAMINGNODE_PORT + mapping;
+
+                    System.out.println("Calling to: " + uri);
+
+                    try {
+                        RestTemplate restTemplate = new RestTemplate();
+
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                uri, HttpMethod.PUT, new HttpEntity<>(InetAddress.getLocalHost().getHostAddress()), String.class);
+                        System.out.println(response.getBody());
+                    } catch (Exception e) {
+                        System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());
+                    }
+
+
                     //not clear to me what needs to be done here exactly
 
                     //or we remove all the files from the whole network
@@ -289,7 +332,7 @@ public class ReplicationService {
 
 
 
-                }else{
+                } else {
                     //nobody has a replicated file -> file can be removed
                     //or do nothing and shut down the node ig
                 }
@@ -303,7 +346,7 @@ public class ReplicationService {
 
             }
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            fileCheckerThread.start();
+            //fileCheckerThread.start();
 
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
@@ -313,8 +356,23 @@ public class ReplicationService {
     }
 
 
-
-
-
-
+    public ResponseEntity<String> removeLocalReference(String fileName, String ipOfRef) {
+        boolean removed = filesIReplicated.removeValue(fileName, ipOfRef);
+        if (removed) {
+            String message = String.format("Reference %s removed successfully for file: %s " +
+                            "\nIn other words: %s is no longer an available download location for file: %s",
+                    ipOfRef, fileName, ipOfRef, fileName
+            );
+            return ResponseEntity.ok(message);
+        } else {
+            String message = String.format("Failed to remove reference %s for file: %s ",
+                    ipOfRef, fileName
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
+        }
+    }
 }
+
+
+
+

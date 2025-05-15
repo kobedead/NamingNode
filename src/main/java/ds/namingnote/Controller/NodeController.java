@@ -64,9 +64,6 @@ public class NodeController {
 
 
 
-
-
-
     @PostMapping("/id/next")
     public ResponseEntity<String> updateNextNode(@RequestParam Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);

@@ -69,7 +69,7 @@ public class ReplicationService {
             System.out.println("All Files are checked and replicated if needed");
             //here all the files should be checked, so a thread can be started to check for updated in the file DIR
             System.out.println(fileCheckerThread);
-            if (fileCheckerThread != null) {
+            if (fileCheckerThread == null) {
                 System.out.println("Creating new file checker and starting thread");
 
                 fileCheckerThread = new Thread(new FileChecker(this));

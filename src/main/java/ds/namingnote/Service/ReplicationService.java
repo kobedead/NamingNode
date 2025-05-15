@@ -2,6 +2,8 @@ package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
+import ds.namingnote.Utilities.Node;
+import ds.namingnote.Utilities.ReferenceDTO;
 import ds.namingnote.model.LocalJsonMap;
 import jakarta.validation.constraints.Null;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -238,9 +240,13 @@ public class ReplicationService {
 
         if (whoReplicatedMyFiles.containsKey(file.getName())){
             //here this node has the file locally -> send to previous again
-            sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
-            return ResponseEntity.status(HttpStatus.CONTINUE)
-                    .body("I have send the file to my previous also");
+            if (nodeService.getCurrentNode() != nodeService.getCurrentNode()){
+                sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
+                return ResponseEntity.status(HttpStatus.CONTINUE)
+                        .body("I have send the file to my previous also");
+            }else{
+
+            }
         }
 
         ////////////
@@ -292,9 +298,15 @@ public class ReplicationService {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
+                String uri ;
+
                 if (filesIReplicated.containsKey(child.getName())) {
                     //send to previous node with ip found in map                                //FIX THIS!!!!
                     sendFile(nodeService.previousNode.getIP(), child, filesIReplicated.get(child.getName()).get(0));
+                    String mapping = "/node/reference/referenceGone";
+                    uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
+
+                    System.out.println("Calling to: " + uri);
 
 
                 }
@@ -305,26 +317,32 @@ public class ReplicationService {
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
                     // reference it has to the Ip of this node that is shutting down
-                    String mapping = "/node/file/removeLocalReference/" + child.getName();
-                    String uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
+                    String mapping = "/node/reference/localGone";
+                    uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
 
                     System.out.println("Calling to: " + uri);
 
-                    try {
-                        RestTemplate restTemplate = new RestTemplate();
-
-                        ResponseEntity<String> response = restTemplate.exchange(
-                                uri, HttpMethod.PUT, new HttpEntity<>(InetAddress.getLocalHost().getHostAddress()), String.class);
-                        System.out.println(response.getBody());
-                    } catch (Exception e) {
-                        System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());
-                    }
-
 
                 } else {
-                    //nobody has a replicated file -> file can be removed
-                    //or do nothing and shut down the node ig
+                    continue;
                 }
+
+                try {
+                    RestTemplate restTemplate = new RestTemplate();
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
+                    HttpEntity<ReferenceDTO> requestEntity = new HttpEntity<>(new ReferenceDTO(nodeService.getCurrentNode().getIP() , child.getName()), headers);
+
+                    ResponseEntity<String> response = restTemplate.exchange(
+                            uri, HttpMethod.PUT, requestEntity, String.class);
+                    System.out.println(response.getBody());
+                } catch (Exception e) {
+                    System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());
+                }
+
+
+
 
 
             }
@@ -335,7 +353,7 @@ public class ReplicationService {
     }
 
 
-    public ResponseEntity<String> removeLocalReference(String fileName, String ipOfRef) {
+    public ResponseEntity<String> iHaveYourReplicateAndYouDontExistAnymore(String fileName, String ipOfRef) {
         boolean removed = filesIReplicated.removeValue(fileName, ipOfRef);
         if (removed) {
             String message = String.format("Reference %s removed successfully for file: %s " +
@@ -350,6 +368,26 @@ public class ReplicationService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
         }
     }
+
+    public ResponseEntity<String> iHaveLocalFileAndReplicationIsGone(String fileName, String ipOfRef) {
+        boolean removed = whoReplicatedMyFiles.removeValue(fileName, ipOfRef);
+        if (removed) {
+            String message = String.format("Reference %s removed successfully for file: %s " +
+                            "\nIn other words: %s is no longer an available download location for file: %s",
+                    ipOfRef, fileName, ipOfRef, fileName
+            );
+            return ResponseEntity.ok(message);
+        } else {
+            String message = String.format("Failed to remove reference %s for file: %s ",
+                    ipOfRef, fileName
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
+        }
+    }
+
+
+
+
 }
 
 

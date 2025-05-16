@@ -18,12 +18,12 @@ public class    NNConf {
 
     ////// File location
 
-    public static final String FILES_DIR = "src/main/resources/Files";
+    public static final String FILES_DIR = "Files";
 
 
     //reference map path
-    public static final String whoHas_MAP_PATH = "src/main/resources/WhoReplicatedMyFiles.json";
-    public static final String localRep_MAP_PATH = "src/main/resources/FilesIReplicated.json";
+    public static final String whoHas_MAP_PATH = "WhoReplicatedMyFiles.json";
+    public static final String localRep_MAP_PATH = "FilesIReplicated.json";
 
 
 

@@ -306,7 +306,7 @@ public class ReplicationService {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                String uri ;
+                String uri;
 
                 if (filesIReplicated.containsKey(child.getName())) {
                     //send to previous node with ip found in map                                //FIX THIS!!!!
@@ -314,28 +314,20 @@ public class ReplicationService {
                     String mapping = "/node/reference/referenceGone";
                     uri = "http://" + filesIReplicated.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
 
-                    System.out.println("Calling to: " + uri);
-
-
-                }
-
-                //if name of file in whoHasRepFile
-                else if (whoReplicatedMyFiles.containsKey(child.getName())) {
+                } else if (whoReplicatedMyFiles.containsKey(child.getName())) { //if name of file in whoHasRepFile
                     // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
                     // reference it has to the Ip of this node that is shutting down
                     String mapping = "/node/reference/localGone";
                     uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
-
-                    System.out.println("Calling to: " + uri);
-
-
                 } else {
+                    System.out.println("Skipped this file: " + child.getName());
                     continue;
                 }
 
                 try {
+                    System.out.println("Calling to: " + uri);
                     RestTemplate restTemplate = new RestTemplate();
 
                     HttpHeaders headers = new HttpHeaders();

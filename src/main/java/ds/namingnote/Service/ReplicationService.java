@@ -320,7 +320,7 @@ public class ReplicationService {
                 }
 
                 //if name of file in whoHasRepFile
-                if (whoReplicatedMyFiles.containsKey(child.getName())) {
+                else if (whoReplicatedMyFiles.containsKey(child.getName())) {
                     // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
                     // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
                     // available. So we need to search through the LocalRepFiles of the owner of this file and remove the

@@ -38,7 +38,7 @@ public class ReplicationService {
 
     private LocalJsonMap<String , String> whoReplicatedMyFiles;
 
-    private LocalJsonMap<String, String> filesIReplicated ;
+    private LocalJsonMap<String, String> filesIReplicated;
 
 
     @Autowired
@@ -54,8 +54,6 @@ public class ReplicationService {
     /**
      * Method start
      * Will go over all files in FILES_DIR and checks through fileAdded
-     *
-     *
      */
     public void start(){
 
@@ -102,6 +100,10 @@ public class ReplicationService {
             ResponseEntity<String> response = restTemplate.exchange(
                     uri, HttpMethod.GET, null, String.class);
             String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
+            if (ipOfNode == null) {
+                System.out.println("No IP found, this is the only node on the network");
+                return;
+            }
             System.out.println("File " + file.getName() + " should be added to " + ipOfNode + " according to NamingServer");
 
             //get own IP

@@ -306,7 +306,7 @@ public class ReplicationService {
             //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                String uri;
+                String uri = "";
 
                 if (filesIReplicated.containsKey(child.getName())) {
                     //send to previous node with ip found in map                                //FIX THIS!!!!

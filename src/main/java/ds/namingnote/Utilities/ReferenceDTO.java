@@ -2,20 +2,23 @@ package ds.namingnote.Utilities;
 
 public class ReferenceDTO {
 
-    String ipOfRefrence;
+    String ipOfReference;
     String fileName;
 
-    public ReferenceDTO(String ipOfRefrence, String fileName) {
-        this.ipOfRefrence = ipOfRefrence;
+    public ReferenceDTO(String ipOfReference, String fileName) {
+        this.ipOfReference = ipOfReference;
         this.fileName = fileName;
     }
 
-    public String getIpOfRefrence() {
-        return ipOfRefrence;
+    public ReferenceDTO() {
     }
 
-    public void setIpOfRefrence(String ipOfRefrence) {
-        this.ipOfRefrence = ipOfRefrence;
+    public String getIpOfReference() {
+        return ipOfReference;
+    }
+
+    public void setIpOfReference(String ipOfReference) {
+        this.ipOfReference = ipOfReference;
     }
 
     public String getFileName() {

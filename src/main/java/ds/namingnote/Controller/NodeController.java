@@ -5,7 +5,6 @@ import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -110,15 +109,15 @@ public class NodeController {
 
     @PutMapping("/reference/localGone")
     public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO) {
-        replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+        replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfReference());
 
     }
     @PutMapping("/reference/referenceGone")
     public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO) {
         System.out.println("iHaveLocalFileAndReplicationIsGone");
         System.out.println(referenceDTO.getFileName());
-        System.out.println(referenceDTO.getIpOfRefrence());
-        replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+        System.out.println(referenceDTO.getIpOfReference());
+        replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfReference());
 
     }
 

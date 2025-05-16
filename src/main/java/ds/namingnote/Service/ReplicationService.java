@@ -2,11 +2,8 @@ package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
-import ds.namingnote.FileCheck.InternalFileWriteTracker;
-import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
 import ds.namingnote.model.LocalJsonMap;
-import jakarta.validation.constraints.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
@@ -27,7 +24,6 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 
 import static ds.namingnote.Config.NNConf.*;
 
@@ -274,7 +270,6 @@ public class ReplicationService {
 
             // Save the file on disc
             String fileName = file.getOriginalFilename();
-            InternalFileWriteTracker.mark(fileName);
             File destFile = new File(FILES_DIR, fileName);
             System.out.println("File saved to: " + destFile.getAbsolutePath());
             file.transferTo(destFile.toPath());

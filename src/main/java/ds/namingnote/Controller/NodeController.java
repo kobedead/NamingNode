@@ -109,12 +109,15 @@ public class NodeController {
 
 
     @PutMapping("/reference/localGone")
-    public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO){
+    public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO) {
         replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
 
     }
     @PutMapping("/reference/referenceGone")
-    public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO){
+    public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO) {
+        System.out.println("iHaveLocalFileAndReplicationIsGone");
+        System.out.println(referenceDTO.getFileName());
+        System.out.println(referenceDTO.getIpOfRefrence());
         replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
 
     }

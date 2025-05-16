@@ -73,6 +73,7 @@ public class LocalJsonMap<K, V> extends HashMap<K, List<V>> {
             boolean removed = list.remove(value);
             if (removed) {
                 updateJSON();
+                System.out.println("removed value: " + value + " currently list size: " + list.size());
                 return true;
             }
         }

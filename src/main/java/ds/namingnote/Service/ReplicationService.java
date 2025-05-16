@@ -332,7 +332,8 @@ public class ReplicationService {
 
                     HttpHeaders headers = new HttpHeaders();
                     headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
-                    HttpEntity<ReferenceDTO> requestEntity = new HttpEntity<>(new ReferenceDTO(nodeService.getCurrentNode().getIP() , child.getName()), headers);
+                    ReferenceDTO referenceDTO = new ReferenceDTO(nodeService.getCurrentNode().getIP(), child.getName());
+                    HttpEntity<ReferenceDTO> requestEntity = new HttpEntity<>(referenceDTO, headers);
 
                     ResponseEntity<String> response = restTemplate.exchange(
                             uri, HttpMethod.PUT, requestEntity, String.class);

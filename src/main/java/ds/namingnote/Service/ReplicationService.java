@@ -270,16 +270,9 @@ public class ReplicationService {
                 directory.mkdirs();  // Creates the directory and parent directories if needed
             }
 
-            // Save the file on disc
-            String fileName = file.getOriginalFilename();
-            File destFile = new File(FILES_DIR, fileName);
-            System.out.println("File saved to: " + destFile.getAbsolutePath());
-            file.transferTo(destFile.toPath());
-
             String fileName = file.getOriginalFilename();
             InternalFileWriteTracker.mark(fileName);
             file.transferTo(new File(FILES_DIR, fileName));
-            System.out.println("File marked and saved to: " + destFile.getAbsolutePath());
 
 
             //here we need to save where the file came from (we store the replication)

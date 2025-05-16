@@ -2,6 +2,7 @@ package ds.namingnote.Service;
 
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.FileCheck.FileChecker;
+import ds.namingnote.FileCheck.InternalFileWriteTracker;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
 import ds.namingnote.model.LocalJsonMap;
@@ -271,9 +272,8 @@ public class ReplicationService {
 
             // Save the file on disc
             String fileName = file.getOriginalFilename();
-            File destFile = new File(FILES_DIR, fileName);
-            System.out.println("File saved to: " + destFile.getAbsolutePath());
-            file.transferTo(destFile.toPath());
+            InternalFileWriteTracker.mark(fileName);
+            file.transferTo(new File(FILES_DIR, fileName));
 
             //here we need to save where the file came from (we store the replication)
             filesIReplicated.putSingle(fileName , ipOfRefrence);

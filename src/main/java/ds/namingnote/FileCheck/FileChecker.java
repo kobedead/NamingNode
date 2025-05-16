@@ -65,6 +65,11 @@ public class FileChecker implements Runnable{
                     Path fileName = (Path) event.context();
                     Path fullFileName = directoryPath.resolve(fileName);
 
+                    if (InternalFileWriteTracker.wasWrittenInternally(fileName.toString())) {
+                        LOGGER.info("Ignored internally-written file: " + fileName);
+                        continue;
+                    }
+
                     // Handle the specific event
                     if (kind == StandardWatchEventKinds.OVERFLOW) {
 

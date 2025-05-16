@@ -48,6 +48,8 @@ public class ReplicationService {
     public ReplicationService() {
         this.whoReplicatedMyFiles = new LocalJsonMap<>(whoHas_MAP_PATH);
         this.filesIReplicated = new LocalJsonMap<>(localRep_MAP_PATH);
+        whoReplicatedMyFiles.deleteJsonFile();
+        filesIReplicated.deleteJsonFile();
     }
 
 
@@ -120,7 +122,7 @@ public class ReplicationService {
                 }
 
 
-                System.out.println("The file : "+ file.getName() + " Needs to be send to : " + ipOfNode);
+                System.out.println("The file : "+ file.getName() + " Needs to be sent to : " + ipOfNode);
 
                 //this node isn't the right one -> send file to ip and save ip in register
 

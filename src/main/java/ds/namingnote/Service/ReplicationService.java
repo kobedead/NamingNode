@@ -114,10 +114,12 @@ public class ReplicationService {
 
             //if ip the file belongs to in not from this node -> send to right node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
+                System.out.println("Size of WhoReplicatedMyFiles: " + whoReplicatedMyFiles.size());
                 if(whoReplicatedMyFiles.containsKey(file.getName())){
                     if (whoReplicatedMyFiles.get(file.getName()).contains(ipOfNode)){
                         //if this is the case the node where we want to send the file already has the file
                         //-> we can skip this
+                        System.out.println("Returned without sending");
                         return;
                     }
                 }

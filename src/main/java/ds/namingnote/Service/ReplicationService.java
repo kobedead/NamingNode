@@ -371,11 +371,13 @@ public class ReplicationService {
             String message = String.format("Reference %s removed successfully for file: %s from FilesIReplicated",
                     ipOfRef, fileName
             );
+            System.out.println(message);
             return ResponseEntity.ok(message);
         } else {
             String message = String.format("Failed to remove reference %s for file: %s ",
                     ipOfRef, fileName
             );
+            System.out.println(message);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
         }
     }
@@ -386,11 +388,13 @@ public class ReplicationService {
             String message = String.format("Reference %s removed successfully for file: %s in WhoReplicatedMyFiles",
                     ipOfRef, fileName
             );
+            System.out.println(message);
             return ResponseEntity.ok(message);
         } else {
             String message = String.format("Failed to remove reference %s for file: %s ",
                     ipOfRef, fileName
             );
+            System.out.println(message);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
         }
     }

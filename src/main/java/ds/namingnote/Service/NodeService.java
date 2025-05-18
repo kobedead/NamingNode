@@ -123,31 +123,33 @@ public class NodeService {
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
             replicationService.start();
             return;
+        }else {
+
+            if (nameHash > previousNode.getID()) {
+
+                //this node will be placed as nextID of the new node.
+                setOtherNextNode(ip, currentNode, name);
+
+                //the new node needs to be previous of this node
+                setPreviousNode(incommingNode);
+
+                System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, new previous node : " + name);
+
+            }
+            if (nameHash < nextNode.getID()) {
+
+
+                //this node will be previousID of new node
+                setOtherPreviousNode(ip, currentNode, name);
+
+                //the new node needs to be next of this node
+                setNextNode(incommingNode);
+
+                System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, new next node : " + name);
+            }
+            replicationService.start();
+
         }
-
-        if (nameHash > previousNode.getID()){
-
-            //this node will be placed as nextID of the new node.
-            setOtherNextNode(ip , currentNode, name);
-
-            //the new node needs to be previous of this node
-            setPreviousNode(incommingNode);
-
-            System.out.println("Node : "+ currentNode.getID() +" .Multicast Processed, new previous node : "+ name);
-
-        }
-        if (nameHash < nextNode.getID()){
-
-
-            //this node will be previousID of new node
-            setOtherPreviousNode(ip , currentNode, name);
-
-            //the new node needs to be next of this node
-            setNextNode(incommingNode);
-
-            System.out.println("Node : "+ currentNode.getID() +" .Multicast Processed, new next node : "+ name);
-        }
-        replicationService.start();
 
     }
 
@@ -350,6 +352,9 @@ public class NodeService {
 
     public Node getPreviousNode () {
         return previousNode;
+    }
+    public Node getNextNode () {
+        return nextNode;
     }
 
     public void setPreviousNode(Node previousNode) {

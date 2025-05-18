@@ -1,11 +1,12 @@
 package ds.namingnote.Service;
 
+import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
+import ds.namingnote.CustomMaps.LocalFiles;
 import ds.namingnote.FileCheck.FileChecker;
-import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
-import ds.namingnote.model.LocalJsonMap;
-import jakarta.validation.constraints.Null;
+import ds.namingnote.CustomMaps.FilesIReplicated;
+import ds.namingnote.CustomMaps.WhoHasMyFiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
@@ -25,7 +26,6 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 
 import static ds.namingnote.Config.NNConf.*;
 
@@ -35,17 +35,23 @@ public class ReplicationService {
 
     private Thread fileCheckerThread = null;
 
-    private LocalJsonMap<String , String> whoReplicatedMyFiles;
+    private WhoHasMyFiles<String , String> whoReplicatedMyFiles;
 
-    private LocalJsonMap<String, String> filesIReplicated ;
+    private FilesIReplicated<String, String> filesIReplicated ;
+
+    private LocalFiles<String , String> localFiles;
+
+
+    @Autowired
+    private SyncAgent syncAgent;
 
 
     @Autowired
     private NodeService nodeService;
 
     public ReplicationService() {
-        this.whoReplicatedMyFiles = new LocalJsonMap<>(whoHas_MAP_PATH);
-        this.filesIReplicated = new LocalJsonMap<>(localRep_MAP_PATH);
+        this.whoReplicatedMyFiles = new WhoHasMyFiles<>(whoHas_MAP_PATH , syncAgent);
+        this.filesIReplicated = new FilesIReplicated<>(localRep_MAP_PATH ,syncAgent);
     }
 
 
@@ -82,7 +88,7 @@ public class ReplicationService {
      * Method fileAdded
      * Will check with naming server if file belongs to itself or if it needs replication
      * Will also preform the replication through sendFile
-     * @param file  file that is added
+     * @param file  file that is added -> is always a local file (can be replicate through FileChecker)!!
      */
     public void fileAdded(File file){
 
@@ -102,8 +108,9 @@ public class ReplicationService {
             //get own IP
             InetAddress localHost = InetAddress.getLocalHost();           // (MAYBE GET FROM NODESERVICE?)
 
-            //if ip the file belongs to in not from this node -> send to right node
+            //if ip it needs to be sent to is not this node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
+
                 if(whoReplicatedMyFiles.containsKey(file.getName())){
                     if (whoReplicatedMyFiles.get(file.getName()).contains(ipOfNode)){
                         //if this is the case the node where we want to send the file already has the file
@@ -111,11 +118,15 @@ public class ReplicationService {
                         return;
                     }
                 }
+                if (filesIReplicated.containsKey(file.getName())){
+                    //i already have the file -> we can skip
+                    //-> FileChecker probably called this method
+                    return;
+                }
 
+                //here we only get if the file is owned by us and not send to node yet
 
                 System.out.println("The file : "+ file.getName() + " Needs to be send to : " + ipOfNode);
-
-                //this node isn't the right one -> send file to ip and save ip in register
 
                 //should do check or execution if file transfer not completed!!!!
                 ResponseEntity<String> check = sendFile(ipOfNode , file , null);
@@ -127,6 +138,15 @@ public class ReplicationService {
             }
             else
                 System.out.println("The file : " + file.getName() + " Is already on right node");
+
+                if (!filesIReplicated.containsKey(file.getName())){
+                    //this is the rare case where the file is owned by us and needs to be replicated to us
+                    //pure local file!!!!                                    //this is overkill
+                    localFiles.putSingle(file.getName() , nodeService.getCurrentNode().getIP());
+                }
+
+
+
 
         } catch (Exception e) {
             System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
@@ -248,7 +268,7 @@ public class ReplicationService {
             }
         }
 
-        ////////////
+        ////////////put the file in this nodes local dir
 
         try {
 
@@ -350,6 +370,7 @@ public class ReplicationService {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
 
+        //for testing purposes
         whoReplicatedMyFiles.deleteJsonFile();
         filesIReplicated.deleteJsonFile();
 

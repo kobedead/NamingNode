@@ -38,4 +38,17 @@ public class Node {
     public void setIP(String IP) {
         this.IP = IP;
     }
+
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "ID ='" + ID + '\'' +
+                ", IP =" + IP +
+                '}';
+    }
+
+
+
+
 }

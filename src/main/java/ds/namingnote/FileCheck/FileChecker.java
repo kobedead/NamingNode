@@ -40,7 +40,7 @@ public class FileChecker implements Runnable{
 
             // Infinite loop to continuously watch for events
             while (running) {
-                if (!Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     running = false;
                     break;
                 }

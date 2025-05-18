@@ -1,10 +1,12 @@
 package ds.namingnote.Service;
 
+import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.Utilities;
+import ds.namingnote.model.LocalFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -27,10 +30,17 @@ public class NodeService {
 
     private boolean namingServerResponse = false;
 
+    private MulticastSender multicastSender;
+    private MulticastListener multicastListener;
+    private SyncAgent syncAgent;
+
     private Thread multicastSenderThread;
     private Thread multicastListenerThread;
+    private Thread syncAgentThread;
 
     private boolean listenerStarted = false;
+
+
 
     @Autowired
     private ReplicationService replicationService;
@@ -53,11 +63,18 @@ public class NodeService {
         this.currentNode =  currentnode ;
 
         //create the threads for the multicasters
-        multicastSenderThread = new Thread(new MulticastSender(name));
-        multicastListenerThread = new Thread(new MulticastListener(this));
+        multicastSender = new MulticastSender(name);
+        multicastListener = new MulticastListener(this);
+        multicastSenderThread = new Thread(multicastSenderThread);
+        multicastListenerThread = new Thread(multicastListener);
 
         //begin sending messages
         multicastSenderThread.start();
+
+        // create the thread for the SyncAgent
+        syncAgent = new SyncAgent(this);
+        syncAgentThread = new Thread(syncAgent);
+        syncAgentThread.start();
     }
 
     /**
@@ -345,12 +362,25 @@ public class NodeService {
     }
 
 
+    public void updateFileLockStatus(String fileName, boolean isLocked) {
+        if (isLocked) {
+            syncAgent.lockFile(fileName);
+        } else {
+            syncAgent.unlockFile(fileName);
+        }
+    }
 
+    // TODO: figure out when this function should even be used.
+    public void sendLockNotification(String fileName, boolean isLocked) {
+        multicastSender.sendLockNotification(fileName, isLocked);
+    }
 
 
     public Node getPreviousNode () {
         return previousNode;
     }
+
+    public Node getNextNode () { return nextNode; }
 
     public void setPreviousNode(Node previousNode) {
         this.previousNode = previousNode;
@@ -366,5 +396,9 @@ public class NodeService {
 
     public Node getCurrentNode() {
         return currentNode;
+    }
+
+    public ResponseEntity<List<LocalFile>> getAgentFileList() {
+        return new ResponseEntity<>(syncAgent.getOwnedFiles(), HttpStatus.OK);
     }
 }

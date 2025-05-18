@@ -13,8 +13,9 @@ public class    NNConf {
 
     ////////////Multicast specs
     public static final String MULTICAST_GROUP = "230.0.0.1";
-    public static final int Multicast_PORT = 4446;
-    public static final String PREFIX = "joining";  // Example filter keyword
+    public static final int MULTICAST_PORT = 4446;
+    public static final String NODE_PREFIX = "joining";  // Example filter keyword
+    public static final String LOCK_PREFIX = "locking";
 
     ////// File location
 

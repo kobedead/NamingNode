@@ -4,13 +4,17 @@ import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
+import ds.namingnote.model.LocalFile;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 @RestController
@@ -121,8 +125,8 @@ public class NodeController {
 
     }
 
-
-
-
-
+    @GetMapping("/agent/fileList")
+    public ResponseEntity<List<LocalFile>> getAgentFileList() {
+        return nodeService.getAgentFileList();
+    }
 }

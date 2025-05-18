@@ -1,109 +1,107 @@
 package ds.namingnote.Multicast;
 
-import ds.namingnote.Config.NNConf;
-import ds.namingnote.Service.NodeService;
-import ds.namingnote.Utilities.Utilities;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-
+import java.io.IOException;
 import java.net.*;
-import java.io.*;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import ds.namingnote.Config.NNConf; // Assuming this is where your constants are
+import ds.namingnote.Service.NodeService;  //  Assuming this is your NodeService
+import ds.namingnote.Utilities.Utilities;
 
 public class MulticastListener implements Runnable {
 
-
     private MulticastSocket socket;
     private InetAddress group;
+    private NodeService nodeService; //  Use the NodeService
 
-    private NodeService nodeService;
-
-    public MulticastListener(NodeService nodeService) {
+    public MulticastListener(NodeService nodeService) { // Inject NodeService
         this.nodeService = nodeService;
-
-
         try {
-            // Create the multicast socket
-            socket = new MulticastSocket(NNConf.Multicast_PORT);
-
-            // Create a multicast group address
+            socket = new MulticastSocket(NNConf.MULTICAST_PORT);
             group = InetAddress.getByName(NNConf.MULTICAST_GROUP);
-
-            SocketAddress sockaddr = new InetSocketAddress(group, NNConf.Multicast_PORT);
-
-            // Join the multicast group
-            socket.joinGroup(sockaddr, null);                   //can give error
-
+            SocketAddress sockaddr = new InetSocketAddress(group, NNConf.MULTICAST_PORT);
+            socket.joinGroup(sockaddr, null);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error initializing MulticastListener", e); // More robust error handling
         }
     }
 
     @Override
     public void run() {
-        byte[] buffer = new byte[1024];  // Buffer for receiving messages
+        byte[] buffer = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-        System.out.println("Listening for multicast messages on group: " + NNConf.MULTICAST_GROUP + " and port: " + NNConf.Multicast_PORT);
+        System.out.println("Listening for multicast messages on " + NNConf.MULTICAST_GROUP + ":" + NNConf.MULTICAST_PORT);
 
         while (!Thread.currentThread().isInterrupted()) {
-
             try {
-                // Receive the incoming packet
                 socket.receive(packet);
-
-                // Filter based on the source IP, port, and content of the message
-                InetAddress sourceAddress = packet.getAddress();
                 String message = new String(packet.getData(), 0, packet.getLength());
-
-                // Check if the message contains the specific keyword
-                if (message.startsWith(NNConf.PREFIX)) {
-                  //if message has prefix we need to process it
-                    String name = extractName(message);                 //check
-                    if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()){ //otherwise it picks up its own multicast
-                        nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
-                    }
-                    else
-                        System.out.println("Name not found in multicast message");
-                } else {
-                    System.out.println("Filtered out message with incorrect prefix: " + message);
-                }
+                processMessage(message, packet.getAddress()); // Pass the sender address
             } catch (IOException e) {
-                e.printStackTrace();
+                if (!socket.isClosed()) { // Only print if the socket is not closed.
+                    System.err.println("IO Exception during multicast receive: " + e.getMessage());
+                }
+                break; // Exit loop if there's an error receiving
             }
-
         }
-
+        System.out.println("Multicast Listener Thread Stopped"); //Add a stop message
+        close(); // Ensure socket is closed when the thread finishes
     }
 
-    // Close the socket when done
-    public void close() {
-        try {
-            socket.leaveGroup(group);
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void processMessage(String message, InetAddress sourceAddress) {
+        if (message.startsWith(NNConf.NODE_PREFIX)) {
+            processNodeAnnouncement(message, sourceAddress.toString().replace("/", ""));
+        } else if (message.startsWith(NNConf.LOCK_PREFIX)) {
+            processLockNotification(message);
+        } else {
+            System.out.println("Filtered out message with unknown prefix: " + message);
+        }
+    }
+
+    private void processNodeAnnouncement(String message, String sourceAddress) {
+        String name = extractName(message);
+        if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()) {
+            nodeService.processIncomingMulticast(sourceAddress, name);
+        } else {
+            System.out.println("Name not found or self in multicast message: " + message);
+        }
+    }
+
+    private void processLockNotification(String message) {
+        String data = message.substring(NNConf.LOCK_PREFIX.length());
+        String[] parts = data.split(":");
+        if (parts.length == 3) {
+            String filename = parts[0];
+            boolean isLocked = Boolean.parseBoolean(parts[1]);
+            // Assuming you have a method in NodeService (or a dedicated service) to handle lock updates
+            nodeService.updateFileLockStatus(filename, isLocked);
+        } else {
+            System.err.println("Invalid lock notification format: " + message);
         }
     }
 
 
-    public static String extractName(String input) {
-        // Regular expression to match text inside curly braces
-        String regex = "\\{([^}]+)\\}";  // Match content inside {}
 
+    private String extractName(String input) {
+        String regex = "\\{([^}]+)\\}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
-
-        // Check if the pattern matches
         if (matcher.find()) {
-            // Return the first captured group (the name inside the braces)
             return matcher.group(1);
         }
-
-        // Return null or empty string if no match is found
         return null;
     }
 
+    public void close() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.leaveGroup(group);
+                socket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing multicast socket: " + e.getMessage());
+        }
+    }
 }

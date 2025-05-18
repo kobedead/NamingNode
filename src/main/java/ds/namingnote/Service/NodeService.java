@@ -72,7 +72,7 @@ public class NodeService {
         multicastSenderThread.start();
 
         // create the thread for the SyncAgent
-        syncAgent = new SyncAgent(this);
+        syncAgent = new SyncAgent(this, multicastSender);
         syncAgentThread = new Thread(syncAgent);
         syncAgentThread.start();
     }

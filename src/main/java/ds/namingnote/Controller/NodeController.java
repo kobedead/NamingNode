@@ -129,4 +129,11 @@ public class NodeController {
     public ResponseEntity<List<LocalFile>> getAgentFileList() {
         return nodeService.getAgentFileList();
     }
+
+    // TODO: temporary test mapping
+    @PostMapping("/agent/sendLockNotification")
+    public ResponseEntity<String> sendLockNotification(@RequestBody LocalFile localFile) {
+        nodeService.sendLockNotification(localFile.getFileName(), localFile.isLocked());
+        return new ResponseEntity<>(localFile.getFileName() + " locked by Agent", HttpStatus.OK);
+    }
 }

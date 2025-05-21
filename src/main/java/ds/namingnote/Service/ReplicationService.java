@@ -7,6 +7,7 @@ import ds.namingnote.CustomMaps.*;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.Utilities.ReferenceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -37,6 +38,7 @@ public class ReplicationService {
     private GlobalMap globalMap;
 
     @Autowired
+    @Lazy
     private NodeService nodeService;
 
     public ReplicationService() {

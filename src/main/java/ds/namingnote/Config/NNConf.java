@@ -23,10 +23,7 @@ public class    NNConf {
 
 
     //reference map path
-    public static final String whoHas_MAP_PATH = "src/main/resources/WhoReplicatedMyFiles.json";
-    public static final String localRep_MAP_PATH = "src/main/resources/FilesIReplicated.json";
-
-
+    public static final String GLOBAL_MAP_PATH = "src/main/resources/GlobalMap.json";
 
 
 

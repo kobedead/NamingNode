@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Service
 public class NodeService {
 
-    Node currentNode =null;
+    Node currentNode = null;
     Node nextNode = null;
     Node previousNode = null;
 
@@ -55,6 +55,7 @@ public class NodeService {
         Node currentnode = new Node(Utilities.mapHash(name) , localHost.getHostAddress());
         //set current node
         this.currentNode =  currentnode ;
+        System.out.println("Current node is set: " + currentnode.getIP());
 
         //create the threads for the multicasters
         multicastSenderThread = new Thread(new MulticastSender(name));

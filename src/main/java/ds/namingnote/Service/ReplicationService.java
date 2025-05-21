@@ -7,6 +7,7 @@ import ds.namingnote.CustomMaps.*;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.Utilities.ReferenceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -37,6 +38,7 @@ public class ReplicationService {
     private GlobalMap globalMap;
 
     @Autowired
+    @Lazy
     private NodeService nodeService;
 
     public ReplicationService() {
@@ -82,7 +84,7 @@ public class ReplicationService {
     public void fileAdded(File file){
 
 
-        String mapping = "/node/by-filename/" + file.getName();
+        String mapping = "/namingserver/node/by-filename/" + file.getName();
         String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();
@@ -91,7 +93,7 @@ public class ReplicationService {
 
             //get ip of node that file belongs to from the naming server
             ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
+                    uri, HttpMethod.GET, null, String.class);
             String ipOfNode = response.getBody(); // the response should contain the ip of the node the file belongs to
 
             //get own IP

@@ -42,12 +42,7 @@ public class AgentController {
      */
     @GetMapping("/sync/filelist")
     public ResponseEntity<Map<String, FileInfo>> getFilelist() {
-
-        Node currentNode = syncAgent.getAttachedNode();
-        if (currentNode == null) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(null); // Node not ready
-        }
-        logger.fine("Node " + currentNode.getID() + " responding to /sync/filelist request. List size: " + syncAgent.getGlobalMapData().size());
+        logger.fine("Node " + nodeService.getCurrentNode().getID() + " responding to /sync/filelist request. List size: " + syncAgent.getGlobalMapData().size());
         return ResponseEntity.ok(syncAgent.getGlobalMapData());
     }
 

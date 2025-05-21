@@ -358,7 +358,9 @@ public class GlobalMap {
         // Create a new HashMap from the entries of the ConcurrentHashMap.
         // This provides a point-in-time snapshot that is safe to iterate over
         // and send to another node without worrying about concurrent modifications.
-        return new HashMap<>(internalMap);
+
+        System.out.println("The internal map of the globalMap is asked Map : " + internalMap);
+        return internalMap;
 
     }
 

@@ -43,6 +43,8 @@ public class SyncAgent implements Runnable {
         this.attachedNode = nodeService.getCurrentNode();
         this.globalMap = GlobalMap.getInstance();
         this.restTemplate = new RestTemplate();
+        System.out.println("Initialized the Sync agent, Global_Map = " + globalMap );
+
     }
 
 

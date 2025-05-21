@@ -28,7 +28,6 @@ public class SyncAgent implements Runnable {
     private GlobalMap globalMap;
 
 
-    @Autowired
     private  NodeService nodeService;
 
     private long syncIntervalMillis = 30000; // e.g., 30 seconds
@@ -39,8 +38,9 @@ public class SyncAgent implements Runnable {
         // will be set by the NodeService or an AgentManager after creation or deserialization.
     }
 
-    public void initialize(Node currentNode) {
-        this.attachedNode = currentNode;
+    public void initialize( NodeService nodeService) {
+        this.nodeService = nodeService;
+        this.attachedNode = nodeService.getCurrentNode();
         this.globalMap = GlobalMap.getInstance();
         this.restTemplate = new RestTemplate();
     }

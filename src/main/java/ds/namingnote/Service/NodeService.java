@@ -41,8 +41,7 @@ public class NodeService {
     private ReplicationService replicationService;
 
 
-    private SyncAgent syncAgent;
-    private Thread syncAgentThread;
+
 
     /**
      *  Method setNameBegin
@@ -64,8 +63,6 @@ public class NodeService {
         //create the threads for the multicast
         multicastSenderThread = new Thread(new MulticastSender(name));
         multicastListenerThread = new Thread(new MulticastListener(this));
-        this.syncAgent = new SyncAgent();
-        syncAgentThread = new Thread(syncAgent);
 
         //begin sending messages
         multicastSenderThread.start();
@@ -89,8 +86,6 @@ public class NodeService {
             multicastListenerThread.start();  //start the listening thread
             listenerStarted = true;
             replicationService.start();  //start the replication phase
-            syncAgent.initialize(currentNode);
-            syncAgentThread.start();
             return;
         }
 

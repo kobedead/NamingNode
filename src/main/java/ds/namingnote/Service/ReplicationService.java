@@ -35,6 +35,8 @@ public class ReplicationService {
 
 
     private Thread fileCheckerThread = null;
+    private SyncAgent syncAgent = null ;
+    private Thread syncAgentThread;
     private GlobalMap globalMap;
 
     @Autowired
@@ -68,7 +70,16 @@ public class ReplicationService {
 
                 fileCheckerThread = new Thread(new FileChecker(this));
                 fileCheckerThread.start();
+
             }
+            if (syncAgent == null){
+                this.syncAgent = new SyncAgent();
+                syncAgent.initialize(nodeService);
+                syncAgentThread = new Thread(syncAgent);
+                syncAgentThread.start();
+            }
+
+
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }

@@ -35,8 +35,7 @@ public class ReplicationService {
 
     private Thread fileCheckerThread = null;
     private GlobalMap globalMap;
-    @Autowired
-    private SyncAgent syncAgent;
+
     @Autowired
     private NodeService nodeService;
 

@@ -28,8 +28,6 @@ public class SyncAgent implements Runnable {
     private  RestTemplate restTemplate;
     private GlobalMap globalMap;
 
-    @Autowired
-    private ReplicationService replicationService;
 
     @Autowired
     private  NodeService nodeService;

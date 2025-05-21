@@ -35,7 +35,9 @@ public class ReplicationService {
 
 
     private Thread fileCheckerThread = null;
-    private SyncAgent syncAgent = null ;
+
+    @Autowired
+    private SyncAgent syncAgent ;
     private Thread syncAgentThread;
     private GlobalMap globalMap;
 
@@ -71,13 +73,15 @@ public class ReplicationService {
                 fileCheckerThread = new Thread(new FileChecker(this));
                 fileCheckerThread.start();
 
-            }
-            if (syncAgent == null){
                 this.syncAgent = new SyncAgent();
                 syncAgent.initialize(nodeService);
                 syncAgentThread = new Thread(syncAgent);
                 syncAgentThread.start();
+
+
             }
+
+            
 
 
         } else {

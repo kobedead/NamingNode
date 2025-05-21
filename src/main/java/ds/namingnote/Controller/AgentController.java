@@ -129,7 +129,7 @@ public class AgentController {
             Node nextNode = nodeService.getNextNode();
             if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
                 logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
-                nodeService.forwardAgent(failureAgent, nextNode);
+                //nodeService.forwardAgent(failureAgent, nextNode);
             } else {
                 if (nextNode == null || nextNode.getID() == currentNode.getID()) {
                     logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");

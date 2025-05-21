@@ -89,8 +89,8 @@ public class NodeService {
             multicastListenerThread.start();  //start the listening thread
             listenerStarted = true;
             replicationService.start();  //start the replication phase
-            syncAgentThread.start();
             syncAgent.initialize(currentNode);
+            syncAgentThread.start();
             return;
         }
 

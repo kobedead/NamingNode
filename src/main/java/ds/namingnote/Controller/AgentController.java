@@ -28,6 +28,7 @@ public class AgentController {
 
     private static final Logger logger = Logger.getLogger(AgentController.class.getName());
 
+
     @Autowired
     private SyncAgent syncAgent;
 
@@ -36,6 +37,12 @@ public class AgentController {
 
     @Autowired
     private ReplicationService replicationService;
+
+
+    public AgentController(SyncAgent syncAgent) {
+        this.syncAgent = syncAgent;
+    }
+
 
     /**
      * Endpoint for SyncAgents to get the file list from this node.

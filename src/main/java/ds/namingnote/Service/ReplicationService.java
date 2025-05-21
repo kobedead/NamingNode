@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Agents.FileInfo;
 import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
+import ds.namingnote.Controller.AgentController;
 import ds.namingnote.CustomMaps.*;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.Utilities.ReferenceDTO;
@@ -73,7 +74,7 @@ public class ReplicationService {
                 fileCheckerThread = new Thread(new FileChecker(this));
                 fileCheckerThread.start();
 
-                this.syncAgent = new SyncAgent();
+
                 syncAgent.initialize(nodeService);
                 syncAgentThread = new Thread(syncAgent);
                 syncAgentThread.start();
@@ -81,7 +82,7 @@ public class ReplicationService {
 
             }
 
-            
+
 
 
         } else {

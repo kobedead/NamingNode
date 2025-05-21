@@ -360,7 +360,8 @@ public class GlobalMap {
         // and send to another node without worrying about concurrent modifications.
 
         System.out.println("The internal map of the globalMap is asked Map : " + internalMap);
-        return internalMap;
+        return new HashMap<>(internalMap);
+
 
     }
 

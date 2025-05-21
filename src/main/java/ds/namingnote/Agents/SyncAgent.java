@@ -4,6 +4,7 @@ import ds.namingnote.CustomMaps.GlobalMap;
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Utilities.Node;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -145,8 +146,8 @@ public class SyncAgent implements Runnable {
             String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/sync/filelist";
             logger.fine("SyncAgent: Requesting file list from next node: " + url);
 
-            //using globalMap might be bad cause of the fact that this is a singleton????
-            ResponseEntity<GlobalMap> response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, null, GlobalMap.class);
+            ParameterizedTypeReference<Map<String, FileInfo>> responseType = new ParameterizedTypeReference<Map<String, FileInfo>>() {};
+            ResponseEntity<Map<String, FileInfo>> response  = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, null, responseType);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, FileInfo> nextNodeFileList = (Map<String, FileInfo>) response.getBody();

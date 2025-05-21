@@ -74,10 +74,7 @@ public class ReplicationService {
                 fileCheckerThread = new Thread(new FileChecker(this));
                 fileCheckerThread.start();
 
-<<<<<<< HEAD
 
-=======
->>>>>>> db649dc75c2e96002bd545e6ecd530163a2d1c82
                 syncAgent.initialize(nodeService);
                 syncAgentThread = new Thread(syncAgent);
                 syncAgentThread.start();

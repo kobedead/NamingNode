@@ -107,7 +107,7 @@ public class ReplicationService {
                         //-> we can skip this
                         return;
                     }
-                    if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
+                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
                         //i already have the file -> we can skip
                         //-> FileChecker probably called this method
                         return;
@@ -134,12 +134,8 @@ public class ReplicationService {
                 if (!globalMap.containsKey(file.getName())){
                     //this is the rare case where the file is owned by us and needs to be replicated to us
                     //pure local file!!!!                                    //this is overkill
-                    globalMap.setOwner(file.getName() ,nodeService.currentNode.getIP());
+                    globalMap.setOwner(file.getName() ,nodeService.getCurrentNode().getIP());
                 }
-
-
-
-
         } catch (Exception e) {
             System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
         }
@@ -263,7 +259,7 @@ public class ReplicationService {
         //this is for the failureAgent
 
         //if the referenceIp is the ip of this node -> this node should become the new owner of the file
-        if(Objects.equals(ipOfRefrence, nodeService.currentNode.getIP())){
+        if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
             //check if this node already has replicated the file
             //update the FileInfo in global map !!!
         }
@@ -273,12 +269,12 @@ public class ReplicationService {
 
         if (globalMap.containsKey(file.getName())){
             FileInfo fileInfo = globalMap.get(file.getName());
-            if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
+            if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
                 //I already own a replicate of the file nothing
                 return ResponseEntity.status(HttpStatus.CONTINUE)
                         .body("I have a replicate already");
             }
-            if (Objects.equals(fileInfo.getOwner(), nodeService.currentNode.getIP())){
+            if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())){
                 //here this node has the file locally -> send to previous again
                 sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
                 return ResponseEntity.status(HttpStatus.CONTINUE)
@@ -308,7 +304,7 @@ public class ReplicationService {
             file.transferTo(destFile.toPath());
 
             //here we need to save where the file came from (we store the replication)
-            globalMap.putReplicationReference(fileName , nodeService.currentNode.getIP());
+            globalMap.putReplicationReference(fileName , nodeService.getCurrentNode().getIP());
             //filesIReplicated.putSingle(fileName , ipOfRefrence);
 
 
@@ -345,12 +341,12 @@ public class ReplicationService {
                     FileInfo fileInfo = globalMap.get(child.getName());
 
                     //i replicated the file -> send file to previous node (owner should be synced already on previous node)
-                    if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
-                        sendFile(nodeService.previousNode.getIP(), child, null);
-                        globalMap.removeReplicationReference(child.getName() , nodeService.currentNode.getIP());
+                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
+                        sendFile(nodeService.getPreviousNode().getIP(), child, null);
+                        globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
                     }
                     //should not be both possible
-                    else if (Objects.equals(fileInfo.getOwner(), nodeService.currentNode.getIP())
+                    else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
                             && !fileInfo.getReplicationLocations().isEmpty() ) {
                         //the file is owned by this node and there are replications -> new owner chosen??
                         //for now we will just remove the owner from the FileInfo

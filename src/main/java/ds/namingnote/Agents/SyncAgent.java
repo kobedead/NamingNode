@@ -2,12 +2,11 @@ package ds.namingnote.Agents;
 
 import ds.namingnote.CustomMaps.GlobalMap;
 import ds.namingnote.Service.NodeService;
-import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.ResponseEntity;
 
 
 import java.util.*;
@@ -88,8 +87,50 @@ public class SyncAgent implements Runnable {
         logger.info("SyncAgent stopped for node: " + attachedNode.getIP());
     }
 
+    /**
+     * This method will get a map and forward it to the next node to merge.
+     * Also merges automatically in begin of method
+     * @param receivedMap
+     * @return
+     */
+    public ResponseEntity<String> forwardMap(Map<String, FileInfo> receivedMap) {
+        Node currentNode = nodeService.getCurrentNode();
+        Node nextNode = nodeService.getNextNode();
 
+        if (currentNode == null || nextNode == null || nextNode.getID() == currentNode.getID()) {
+            logger.warning("Cannot forward file list. Next node is null or self.");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Cannot forward: Next node unavailable.");
+        }
 
+        String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/sync/receive-filelist";
+        logger.fine("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
+
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON); // Or another suitable format
+
+        HttpEntity<Map<String, FileInfo>> requestEntity = new HttpEntity<>(receivedMap, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                logger.fine("File list successfully forwarded to " + nextNode.getIP() + ". Response: " + response.getBody());
+                return ResponseEntity.ok("File list forwarded successfully.");
+            } else {
+                logger.warning("Failed to forward file list to " + nextNode.getIP() + ". Status: " +
+                        response.getStatusCode() + ", Body: " + response.getBody());
+                return ResponseEntity.status(response.getStatusCode()).body("Failed to forward file list.");
+            }
+        } catch (Exception e) {
+            logger.severe("Error forwarding file list to " + nextNode.getIP() + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during forwarding: " + e.getMessage());
+        }
+    }
+
+    /**
+     * This method will get the map of the nextnode and merge with this
+     */
     private void synchronizeWithNextNode() {
         Node nextNode = nodeService.getNextNode();
 
@@ -194,6 +235,11 @@ public class SyncAgent implements Runnable {
 
     public Map<String, FileInfo> getGlobalMapData() {
         return globalMap.getGlobalMapData();
+    }
+
+    public void mergeGlobalMap(Map<String, FileInfo> receivedMap){
+        logger.info("SyncAgent : Merging of maps requested -> merging can contain errors :)");
+        globalMap.mergeFileLists(receivedMap);
     }
 
 

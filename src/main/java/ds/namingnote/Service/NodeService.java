@@ -308,8 +308,11 @@ public class NodeService {
 
                     setPreviousNode(failedPreviousNode);
                     setOtherNextNode(failedPreviousNode.getIP() , currentNode , failedPreviousNode.getIP());
-                                                        //check
-                    activateFailureAgent(failedNode, failedPreviousNode);
+
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
+
 
                 }else if (failedNode == nextNode){
                     //if failed node is next -> its next becomes our next <-> we become the previous of its next
@@ -320,9 +323,10 @@ public class NodeService {
 
                     setNextNode(failedNextNode);
                     setOtherPreviousNode(failedNextNode.getIP() , currentNode , failedNextNode.getIP());
-                                                        //check
-                    activateFailureAgent(failedNode, failedNextNode);
 
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
 
                 }
 
@@ -364,23 +368,19 @@ public class NodeService {
     }
 
 
-    public void activateFailureAgent(Node failedNode , Node newOwner) {
-        Node targetNode = nextNode; //always forwarding to next node
-        if (failedNode == null || targetNode.getID() == currentNode.getID()) {
+    public void forwardAgent(Serializable agent, Node targetNode) {
+        if (targetNode == null || targetNode.getID() == currentNode.getID()) {
             System.out.println("Cannot forward agent, target is null or self.");
             return;
         }
-
-        FailureAgent failureAgent = new FailureAgent(failedNode, newOwner , currentNode);
-
         String url = "http://" + targetNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/execute";
-        System.out.println("Forwarding Failure agent to " + url);
+        System.out.println("Forwarding agent of type " + agent.getClass().getSimpleName() + " to: " + url);
         try {
             RestTemplate restTemplate = new RestTemplate(); // Use the bean
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM); // Sending serialized Java object
 
-            HttpEntity<Serializable> requestEntity = new HttpEntity<>(failureAgent, headers);
+            HttpEntity<Serializable> requestEntity = new HttpEntity<>(agent, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {

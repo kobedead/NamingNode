@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ds.namingnote.Config.NNConf; // For FILES_DIR
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,6 +50,14 @@ public class AgentController {
         logger.fine("Node " + currentNode.getID() + " responding to /sync/filelist request. List size: " + syncAgent.getGlobalMapData().size());
         return ResponseEntity.ok(syncAgent.getGlobalMapData());
     }
+
+
+    @PostMapping("/sync/forward-filelist")
+    public ResponseEntity<String> forwardReceivedFilelist(@RequestBody Map<String, FileInfo> receivedMap) {
+        return syncAgent.forwardMap(receivedMap);
+    }
+
+
 
     /**
      * Endpoint to request a lock on a file.
@@ -129,7 +138,7 @@ public class AgentController {
             Node nextNode = nodeService.getNextNode();
             if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
                 logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
-                //nodeService.forwardAgent(failureAgent, nextNode);
+                nodeService.forwardAgent(failureAgent, nextNode);
             } else {
                 if (nextNode == null || nextNode.getID() == currentNode.getID()) {
                     logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");

@@ -62,10 +62,23 @@ public class NodeController {
     }
 
 
+    /**
+     * This mapping will take a file and store on this node as new owner of file
+     * part of failure agent
+     *
+     * @param file file to save to node
+     * @return
+     */
+    @PostMapping("/file/new-owner")
+    public ResponseEntity<String> uploadFileNewOwner(@RequestParam("file") MultipartFile file)  {
+        return replicationService.putFile(file, "1"  );
+    }
+
+
 
 
     @PostMapping("/id/next")
-    public ResponseEntity<String> updateNextNode(@RequestBody Node nextNode)  {
+    public ResponseEntity<String> setNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
         nodeService.setNextNode(nextNode);
         return ResponseEntity.ok("NextNode updated succesfully");
@@ -73,7 +86,7 @@ public class NodeController {
     }
 
     @PostMapping("/id/previous")
-    public ResponseEntity<String> updatePreviousNode(@RequestBody  Node previousNode)  {
+    public ResponseEntity<String> setPreviousNode(@RequestBody  Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);
         nodeService.setPreviousNode(previousNode);
         return ResponseEntity.ok("PreviousNode updated succesfully");
@@ -109,12 +122,12 @@ public class NodeController {
 
     @PutMapping("/reference/localGone")
     public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO){
-        replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+        //replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
 
     }
     @PutMapping("/reference/referenceGone")
     public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO){
-        replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
+        //replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
 
     }
 

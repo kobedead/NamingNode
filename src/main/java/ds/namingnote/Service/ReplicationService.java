@@ -1,12 +1,11 @@
 package ds.namingnote.Service;
 
+import ds.namingnote.Agents.FileInfo;
 import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
-import ds.namingnote.CustomMaps.LocalFiles;
+import ds.namingnote.CustomMaps.*;
 import ds.namingnote.FileCheck.FileChecker;
 import ds.namingnote.Utilities.ReferenceDTO;
-import ds.namingnote.CustomMaps.FilesIReplicated;
-import ds.namingnote.CustomMaps.WhoHasMyFiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
@@ -26,6 +25,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import static ds.namingnote.Config.NNConf.*;
 
@@ -34,24 +34,14 @@ public class ReplicationService {
 
 
     private Thread fileCheckerThread = null;
-
-    private WhoHasMyFiles<String , String> whoReplicatedMyFiles;
-
-    private FilesIReplicated<String, String> filesIReplicated ;
-
-    private LocalFiles<String , String> localFiles;
-
-
+    private GlobalMap globalMap;
     @Autowired
     private SyncAgent syncAgent;
-
-
     @Autowired
     private NodeService nodeService;
 
     public ReplicationService() {
-        this.whoReplicatedMyFiles = new WhoHasMyFiles<>(whoHas_MAP_PATH , syncAgent);
-        this.filesIReplicated = new FilesIReplicated<>(localRep_MAP_PATH ,syncAgent);
+        globalMap = GlobalMap.getInstance();
     }
 
 
@@ -111,18 +101,20 @@ public class ReplicationService {
             //if ip it needs to be sent to is not this node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
 
-                if(whoReplicatedMyFiles.containsKey(file.getName())){
-                    if (whoReplicatedMyFiles.get(file.getName()).contains(ipOfNode)){
+                if(globalMap.containsKey(file.getName())){
+                    FileInfo fileInfo = globalMap.get(file.getName());
+                    if(fileInfo.containsAsReference(ipOfNode)){
                         //if this is the case the node where we want to send the file already has the file
                         //-> we can skip this
                         return;
                     }
+                    if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
+                        //i already have the file -> we can skip
+                        //-> FileChecker probably called this method
+                        return;
+                    }
                 }
-                if (filesIReplicated.containsKey(file.getName())){
-                    //i already have the file -> we can skip
-                    //-> FileChecker probably called this method
-                    return;
-                }
+
 
                 //here we only get if the file is owned by us and not send to node yet
 
@@ -133,16 +125,17 @@ public class ReplicationService {
                 System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
                 //save ip to filename (reference)
-                whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
+                globalMap.putReplicationReference(file.getName() , ipOfNode);
+                //whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
 
             }
             else
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
-                if (!filesIReplicated.containsKey(file.getName())){
+                if (!globalMap.containsKey(file.getName())){
                     //this is the rare case where the file is owned by us and needs to be replicated to us
                     //pure local file!!!!                                    //this is overkill
-                    localFiles.putSingle(file.getName() , nodeService.getCurrentNode().getIP());
+                    globalMap.setOwner(file.getName() ,nodeService.currentNode.getIP());
                 }
 
 
@@ -163,6 +156,16 @@ public class ReplicationService {
      * @return response of the node
      */
     public ResponseEntity<String> sendFile(String ipToSendTo ,File file , String IpOfRefrenceToSet  )  {
+
+        if (globalMap.containsKey(file.getName())){
+            FileInfo info =  globalMap.get(file.getName());
+            if (info.isLocked())
+                System.out.println("Sending file : "+ file.getName() +" canceled : Lock is active on File from node : "+  info.getLockedByNodeIp());
+        }else
+            System.out.println("File to send not yet in global map , File:" + file.getName() + "  COULD BE BAD") ;
+
+
+
         final String uri;
 
         //this is done to make the reference of files customizable and not only senders
@@ -207,12 +210,20 @@ public class ReplicationService {
      */
     public ResponseEntity<Resource> getFile(String filename , String ipOfRequester)  {
 
+
         Path path = Paths.get(FILES_DIR + filename);
 
         // Check if file exists
         if (Files.notExists(path)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File Not Found");
         }
+
+        if (globalMap.containsKey(filename)){
+            FileInfo info =  globalMap.get(filename);
+            if (info.isLocked())
+                System.out.println("Getting of file : "+ filename +" Canceled : Lock is active on File from node : "+  info.getLockedByNodeIp());
+        }else
+            System.out.println("Getting of file :" + filename + " File not found in globalMap -> CHECK THIS");
 
         try {
             File file = path.toFile();
@@ -225,7 +236,8 @@ public class ReplicationService {
             }
 
             //add ip of the requester to references
-            whoReplicatedMyFiles.putSingle(filename,ipOfRequester);
+            globalMap.putReplicationReference(file.getName() , ipOfRequester);
+            //whoReplicatedMyFiles.putSingle(filename,ipOfRequester);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -248,25 +260,35 @@ public class ReplicationService {
 
     public ResponseEntity<String> putFile(MultipartFile file , String ipOfRefrence)  {
 
-        //this is for shutdown purposes
 
-        //if i own the file as a reference -> there is a refrence so its all good
-        if (filesIReplicated.containsKey(file.getName())){
-            //I already own a replicate of the file nothing
-            return ResponseEntity.status(HttpStatus.CONTINUE)
-                    .body("I have a replicate already");
+        //this is for the failureAgent
+
+        //if the referenceIp is the ip of this node -> this node should become the new owner of the file
+        if(Objects.equals(ipOfRefrence, nodeService.currentNode.getIP())){
+            //check if this node already has replicated the file
+            //update the FileInfo in global map !!!
         }
 
-        if (whoReplicatedMyFiles.containsKey(file.getName())){
-            //here this node has the file locally -> send to previous again
-            if (nodeService.getCurrentNode() != nodeService.getCurrentNode()){
+
+        //this is for shutdown purposes
+
+        if (globalMap.containsKey(file.getName())){
+            FileInfo fileInfo = globalMap.get(file.getName());
+            if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
+                //I already own a replicate of the file nothing
+                return ResponseEntity.status(HttpStatus.CONTINUE)
+                        .body("I have a replicate already");
+            }
+            if (Objects.equals(fileInfo.getOwner(), nodeService.currentNode.getIP())){
+                //here this node has the file locally -> send to previous again
                 sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
                 return ResponseEntity.status(HttpStatus.CONTINUE)
                         .body("I have send the file to my previous also");
-            }else{
 
             }
+
         }
+
 
         ////////////put the file in this nodes local dir
 
@@ -287,7 +309,8 @@ public class ReplicationService {
             file.transferTo(destFile.toPath());
 
             //here we need to save where the file came from (we store the replication)
-            filesIReplicated.putSingle(fileName , ipOfRefrence);
+            globalMap.putReplicationReference(fileName , nodeService.currentNode.getIP());
+            //filesIReplicated.putSingle(fileName , ipOfRefrence);
 
 
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
@@ -319,50 +342,26 @@ public class ReplicationService {
                 //if name of file in replication files
                 String uri ;
 
-                if (filesIReplicated.containsKey(child.getName())) {
-                    //send to previous node with ip found in map                                //FIX THIS!!!!
-                    sendFile(nodeService.previousNode.getIP(), child, filesIReplicated.get(child.getName()).get(0));
-                    String mapping = "/node/reference/referenceGone";
-                    uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
+                if (globalMap.containsKey(child.getName())){
+                    FileInfo fileInfo = globalMap.get(child.getName());
 
-                    System.out.println("Calling to: " + uri);
-
-
+                    //i replicated the file -> send file to previous node (owner should be synced already on previous node)
+                    if (fileInfo.containsAsReference(nodeService.currentNode.getIP())){
+                        sendFile(nodeService.previousNode.getIP(), child, null);
+                        globalMap.removeReplicationReference(child.getName() , nodeService.currentNode.getIP());
+                    }
+                    //should not be both possible
+                    else if (Objects.equals(fileInfo.getOwner(), nodeService.currentNode.getIP())
+                            && !fileInfo.getReplicationLocations().isEmpty() ) {
+                        //the file is owned by this node and there are replications -> new owner chosen??
+                        //for now we will just remove the owner from the FileInfo
+                        globalMap.setOwner(child.getName() , null);     //option 2
+                    }
+                    else { //the file is only local to me IG -> can be removed with shutdown i think
+                        globalMap.remove(child.getName());
+                        continue;
+                    }
                 }
-
-                //if name of file in whoHasRepFile
-                if (whoReplicatedMyFiles.containsKey(child.getName())) {
-                    // whoHasRepFile for every File stores an IP that the file was replicated to, this is the
-                    // owner of the file. We need to warn the owner that this download location (this node IP) is no longer
-                    // available. So we need to search through the LocalRepFiles of the owner of this file and remove the
-                    // reference it has to the Ip of this node that is shutting down
-                    String mapping = "/node/reference/localGone";
-                    uri = "http://" + whoReplicatedMyFiles.get(child.getName()).get(0) + ":" + NAMINGNODE_PORT + mapping;
-
-                    System.out.println("Calling to: " + uri);
-
-
-                } else {
-                    continue;
-                }
-
-                try {
-                    RestTemplate restTemplate = new RestTemplate();
-
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
-                    HttpEntity<ReferenceDTO> requestEntity = new HttpEntity<>(new ReferenceDTO(nodeService.getCurrentNode().getIP() , child.getName()), headers);
-
-                    ResponseEntity<String> response = restTemplate.exchange(
-                            uri, HttpMethod.PUT, requestEntity, String.class);
-                    System.out.println(response.getBody());
-                } catch (Exception e) {
-                    System.out.println("Exception in removing local reference from owner of node: " + e.getMessage());
-                }
-
-
-
-
 
             }
 
@@ -370,13 +369,16 @@ public class ReplicationService {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
 
-        //for testing purposes
-        whoReplicatedMyFiles.deleteJsonFile();
-        filesIReplicated.deleteJsonFile();
+        //we first need to make sure that the global file is synced with at least 1 node i think
+        //syncAgent.forceSync; -> CHECK!!!!
+        globalMap.deleteJsonFile();
 
     }
 
 
+    //these aren't actually necessary anymore cause we will sync the map -> maybe for faster propagation this could be usefull tho
+
+/*
     public ResponseEntity<String> iHaveYourReplicateAndYouDontExistAnymore(String fileName, String ipOfRef) {
         boolean removed = filesIReplicated.removeValue(fileName, ipOfRef);
         if (removed) {
@@ -409,8 +411,7 @@ public class ReplicationService {
         }
     }
 
-
-
+*/
 
 }
 

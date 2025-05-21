@@ -41,6 +41,10 @@ public class FileInfo implements Serializable {
         this.version = System.currentTimeMillis(); // Initial version
     }
 
+
+
+
+
     // Getters and Setters for all fields...
     public String getFilename() { return filename; }
     public void setFilename(String filename) { this.filename = filename; }
@@ -72,10 +76,17 @@ public class FileInfo implements Serializable {
         this.replicationLocations = replicationLocations;
     }
 
+    public void removeReplicationLocation(String ipOfRepLoc){
+        this.replicationLocations.remove(ipOfRepLoc);
+    }
+
     public void mergeRepLocations(FileInfo otherFileInfo){
         this.replicationLocations.addAll(otherFileInfo.getReplicationLocations());
     }
 
+    public boolean containsAsReference(String ipOfReference){
+        return this.replicationLocations.contains(ipOfReference);
+    }
 
 
     @Override

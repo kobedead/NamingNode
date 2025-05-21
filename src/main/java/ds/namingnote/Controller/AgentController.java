@@ -1,32 +1,24 @@
 package ds.namingnote.Controller;
 
-import ds.namingnote.CustomMaps.GlobalMapList;
 import ds.namingnote.Service.NodeService;
-import ds.namingnote.Service.ReplicationService; // If FailureAgent needs it directly
+import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Agents.FailureAgent;
 import ds.namingnote.Agents.SyncAgent; // Only if controller interacts directly
 import ds.namingnote.Agents.FileInfo;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate; // For agent's RestTemplate needs
 import ds.namingnote.Config.NNConf; // For FILES_DIR
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.springframework.context.ApplicationContext;
-import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -38,6 +30,11 @@ public class AgentController {
     @Autowired
     private SyncAgent syncAgent;
 
+    @Autowired
+    private NodeService nodeService;
+
+    @Autowired
+    private ReplicationService replicationService;
 
     /**
      * Endpoint for SyncAgents to get the file list from this node.
@@ -49,8 +46,8 @@ public class AgentController {
         if (currentNode == null) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(null); // Node not ready
         }
-        logger.fine("Node " + currentNode.getID() + " responding to /sync/filelist request. List size: " + syncAgent.getGlobalFileList().size());
-        return ResponseEntity.ok(syncAgent.getGlobalFileList());
+        logger.fine("Node " + currentNode.getID() + " responding to /sync/filelist request. List size: " + syncAgent.getGlobalMapData().size());
+        return ResponseEntity.ok(syncAgent.getGlobalMapData());
     }
 
     /**
@@ -92,11 +89,67 @@ public class AgentController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Unlock request for '" + filename + "' denied (e.g., not locked by requester or file unknown).");
         }
     }
+
+    /**
+     * Receives a serialized agent, executes it, and forwards if necessary.
+     * As per spec:
+     * 1. Receives an agent as a parameter
+     * 2. Creates a thread from a received agent
+     * 3. Starts the thread
+     * 4. Waits until the thread is finished
+     * 5. Executes the REST method on the next node (unless the agent needs to be terminated)
+     */
+    @PostMapping("/execute")
+    public ResponseEntity<String> executeFailureAgent(@RequestBody byte[] serializedAgent) throws InterruptedException, IOException {
+        Node currentNode = nodeService.getCurrentNode();
+        if (currentNode == null) {
+            logger.severe("Node not initialized. Cannot execute agent.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Node not initialized");
+        }
+        logger.info("Node " + currentNode.getID() + " received agent for execution.");
+
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(serializedAgent);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+
+            FailureAgent failureAgent = (FailureAgent) ois.readObject();
+
+            //maybe add some checks that the object is the failure agent
+
+            // Initialize transient fields
+            failureAgent.initialize(nodeService.getCurrentNode(), nodeService.getNextNode(), replicationService);
+
+            Thread agentThread = new Thread(failureAgent);
+            agentThread.setName("MobileAgentThread-" + failureAgent.getClass().getSimpleName() + "-" + currentNode.getID());
+            logger.info("Starting agent thread for: " + failureAgent.getClass().getSimpleName());
+            agentThread.start();
+            agentThread.join(); // Wait for the agent's run() method to complete
+            logger.info("Agent thread finished: " + failureAgent.getClass().getSimpleName());
+
+            // For FailureAgent: forward to next node unless it's back to originator
+            Node nextNode = nodeService.getNextNode();
+            if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
+                logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
+                nodeService.forwardAgent(failureAgent, nextNode);
+            } else {
+                if (nextNode == null || nextNode.getID() == currentNode.getID()) {
+                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");
+                } else if (nextNode.getID() == failureAgent.getOriginatorNode().getID()) {
+                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Next node (" + nextNode.getID() + ") is originator. Agent terminated.");
+                }
+            }
+
+            return ResponseEntity.ok("Agent executed successfully on node " + currentNode.getID());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }
 
 
 
-}
+
 
 
 

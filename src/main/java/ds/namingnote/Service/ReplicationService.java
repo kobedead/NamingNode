@@ -84,7 +84,7 @@ public class ReplicationService {
     public void fileAdded(File file){
 
 
-        String mapping = "/node/by-filename/" + file.getName();
+        String mapping = "/namingserver/node/by-filename/" + file.getName();
         String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();

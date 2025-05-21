@@ -90,8 +90,8 @@ public class SyncAgent implements Runnable {
     /**
      * This method will get a map and forward it to the next node to merge.
      * Also merges automatically in begin of method
-     * @param receivedMap
-     * @return
+     * @param receivedMap : the received global map of previous node
+     * @return : response to the push
      */
     public ResponseEntity<String> forwardMap(Map<String, FileInfo> receivedMap) {
         Node currentNode = nodeService.getCurrentNode();

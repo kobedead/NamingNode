@@ -1,6 +1,7 @@
 package ds.namingnote.Service;
 
 import ds.namingnote.Agents.FailureAgent;
+import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
@@ -39,6 +40,7 @@ public class NodeService {
     @Autowired
     private ReplicationService replicationService;
 
+    private Thread syncAgentThread;
 
     /**
      *  Method setNameBegin
@@ -57,9 +59,10 @@ public class NodeService {
         this.currentNode =  currentnode ;
         System.out.println("Current node is set: " + currentnode.getIP());
 
-        //create the threads for the multicasters
+        //create the threads for the multicast
         multicastSenderThread = new Thread(new MulticastSender(name));
         multicastListenerThread = new Thread(new MulticastListener(this));
+        syncAgentThread = new Thread(new SyncAgent());
 
         //begin sending messages
         multicastSenderThread.start();
@@ -83,6 +86,7 @@ public class NodeService {
             multicastListenerThread.start();  //start the listening thread
             listenerStarted = true;
             replicationService.start();  //start the replication phase
+            syncAgentThread.start();
             return;
         }
 
@@ -153,6 +157,7 @@ public class NodeService {
                 System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, new next node : " + name);
             }
             replicationService.start();
+
 
         }
 

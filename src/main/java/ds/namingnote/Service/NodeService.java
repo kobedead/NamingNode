@@ -81,10 +81,10 @@ public class NodeService {
         // if node is connected -> stop sending and start listening
         if(!listenerStarted && namingServerResponse && nextNode != null && previousNode != null) {
 
+            listenerStarted = true;
             System.out.println("Multicast stops");
             multicastSenderThread.interrupt(); //stop the sending thread
             multicastListenerThread.start();  //start the listening thread
-            listenerStarted = true;
             replicationService.start();  //start the replication phase
             return;
         }
@@ -132,9 +132,6 @@ public class NodeService {
             replicationService.start();
             return;
 
-
-        //because of a weird bug, only one of the nodes receives the multicast on time. so I will set all nodes from 1 node IG
-
         //only 2 nodes are present in a loop
         }else if (nextNode.getID() == previousNode.getID()) {
             System.out.println("Only 2 node present, third wants to join");
@@ -143,10 +140,8 @@ public class NodeService {
                 System.out.println("Node is at the top end of the loop");
                 //new node is largest in the network
                 if (incommingNode.getID() > currentNode.getID()) {
-                    //setOtherPreviousNode(ip , nextNode , name);
                     setNextNode(incommingNode);
                     setOtherPreviousNode(ip, currentNode, name); //set new node
-                    //setOtherNextNode(ip , nextNode , name); //set new node
                 }
                 //new node sits in between the 2 nodes
                 else if (incommingNode.getID() > previousNode.getID()) {

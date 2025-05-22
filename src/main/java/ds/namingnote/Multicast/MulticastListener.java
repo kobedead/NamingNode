@@ -50,13 +50,14 @@ public class MulticastListener implements Runnable {
 
         while (!Thread.currentThread().isInterrupted()) {
 
-            System.out.println("mult");
             try {
                 // Receive the incoming packet
                 socket.receive(packet);
 
                 // Filter based on the source IP, port, and content of the message
                 InetAddress sourceAddress = packet.getAddress();
+                if (sourceAddress == InetAddress.getLocalHost() )
+                    return;
                 String message = new String(packet.getData(), 0, packet.getLength());
                 System.out.println("multicast message received : " + message + "from " + sourceAddress);
 
@@ -70,19 +71,16 @@ public class MulticastListener implements Runnable {
 
                 // Check if the message contains the specific keyword
                 if (message.startsWith(NNConf.PREFIX)) {
-                    System.out.println("Multicast 1");
 
                     //if message has prefix we need to process it
                     String name = extractName(message);                 //check
-                    System.out.println("Multicast 2");
 
                     if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()){ //otherwise it picks up its own multicast
-                        System.out.println("Multicast 3");
 
                         nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
                     }
                     else
-                        System.out.println("Name not found in multicast message");
+                        System.out.println("Name not found in multicast message or own multicast received");
                 } else {
                     System.out.println("Filtered out message with incorrect prefix: " + message);
                 }
@@ -112,7 +110,6 @@ public class MulticastListener implements Runnable {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
 
-        System.out.println("Multicast 4");
 
         // Check if the pattern matches
         if (matcher.find()) {

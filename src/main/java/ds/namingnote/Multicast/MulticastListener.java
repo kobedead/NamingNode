@@ -60,11 +60,18 @@ public class MulticastListener implements Runnable {
                 String message = new String(packet.getData(), 0, packet.getLength());
                 System.out.println("multicast message received : " + message + "from " + sourceAddress);
 
+
                 // Check if the message contains the specific keyword
                 if (message.startsWith(NNConf.PREFIX)) {
-                  //if message has prefix we need to process it
+                    System.out.println("Multicast 1");
+
+                    //if message has prefix we need to process it
                     String name = extractName(message);                 //check
+                    System.out.println("Multicast 2");
+
                     if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()){ //otherwise it picks up its own multicast
+                        System.out.println("Multicast 3");
+
                         nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
                     }
                     else
@@ -97,6 +104,8 @@ public class MulticastListener implements Runnable {
 
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
+
+        System.out.println("Multicast 4");
 
         // Check if the pattern matches
         if (matcher.find()) {

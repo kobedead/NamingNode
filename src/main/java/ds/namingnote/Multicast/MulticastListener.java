@@ -50,6 +50,7 @@ public class MulticastListener implements Runnable {
 
         while (!Thread.currentThread().isInterrupted()) {
 
+            System.out.println("mult");
             try {
                 // Receive the incoming packet
                 socket.receive(packet);

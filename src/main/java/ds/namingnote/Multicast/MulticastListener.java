@@ -58,6 +58,7 @@ public class MulticastListener implements Runnable {
                 // Filter based on the source IP, port, and content of the message
                 InetAddress sourceAddress = packet.getAddress();
                 String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("multicast message received : " + message + "from " + sourceAddress);
 
                 // Check if the message contains the specific keyword
                 if (message.startsWith(NNConf.PREFIX)) {

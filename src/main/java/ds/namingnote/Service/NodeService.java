@@ -112,10 +112,12 @@ public class NodeService {
         int nameHash = Utilities.mapHash(name);
         Node incommingNode = new Node(nameHash , ip);
 
+        System.out.println("Multicast 4 : " + previousNode + currentNode + nextNode);
 
 
         //new node is the only one with me on network
         if (currentNode == nextNode && currentNode == previousNode){
+            System.out.println("Multicast 5");
 
             //now there are 2 node, so they both need to set their neighbors to each other.
 
@@ -131,6 +133,8 @@ public class NodeService {
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
             replicationService.start();
             return;
+
+
         //only 2 nodes are present in a loop
         }else if (nextNode == previousNode) {
             System.out.println("Only 2 node present, third wants to join");

@@ -79,7 +79,7 @@ public class MulticastListener implements Runnable {
         networkInterfaces = NetworkInterface.getNetworkInterfaces(); // Re-get
         while (networkInterfaces.hasMoreElements()) {
             NetworkInterface ni = networkInterfaces.nextElement();
-            if (ni.supportsMulticast() && !ni.isLoopbackAddress() && ni.isUp()) {
+            if (ni.supportsMulticast() && !ni.isLoopback() && ni.isUp()) {
                 System.out.println("Warning: Specific IP " + ip + " not matched. Falling back to first available multicast interface: " + ni.getDisplayName());
                 return ni; // Use with caution
             }

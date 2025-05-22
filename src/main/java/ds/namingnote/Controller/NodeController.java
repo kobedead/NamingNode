@@ -106,12 +106,13 @@ public class NodeController {
         return ResponseEntity.ok("Received numberOfNodes: " + numberOfNodes);
     }
 
+    @CrossOrigin(origins = "*")
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("alive");
     }
 
-
+    @CrossOrigin(origins = "*")
     @DeleteMapping("/shutdown")
     public void shutdown(){
 

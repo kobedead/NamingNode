@@ -60,11 +60,11 @@ public class SyncAgent implements Runnable {
         }
 
 
-        logger.info("SyncAgent started for node: " + attachedNode.getIP());
+        System.out.println("SyncAgent started for node: " + attachedNode.getIP());
         try {
             //gets run every interval
             while (!Thread.currentThread().isInterrupted()) {
-                logger.fine("SyncAgent run loop iteration for node " + attachedNode.getIP());
+                System.out.println("SyncAgent run loop iteration for node " + attachedNode.getIP());
 
                 //the globalMap is a singleton storage shared with ReplicationService
                 //this means that scanning inside of this agent is unnecessary
@@ -148,14 +148,14 @@ public class SyncAgent implements Runnable {
 
         try {
             String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/sync/filelist";
-            logger.fine("SyncAgent: Requesting file list from next node: " + url);
+            System.out.println("SyncAgent: Requesting file list from next node: " + url);
 
             ParameterizedTypeReference<Map<String, FileInfo>> responseType = new ParameterizedTypeReference<Map<String, FileInfo>>() {};
             ResponseEntity<Map<String, FileInfo>> response  = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, null, responseType);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, FileInfo> nextNodeFileList =  response.getBody();
-                logger.fine("SyncAgent: Received file list from next node " + nextNode.getID() + " with " + nextNodeFileList.size() + " entries.");
+                System.out.println("SyncAgent: Received file list from next node " + nextNode.getID() + " with " + nextNodeFileList.size() + " entries.");
                 globalMap.mergeFileLists(nextNodeFileList);
             } else {
                 logger.warning("SyncAgent: Failed to get file list from next node " + nextNode.getID() +

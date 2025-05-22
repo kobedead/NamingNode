@@ -293,6 +293,9 @@ public class GlobalMap {
      * @param otherMap The map to merge into this GlobalMap.
      */
     public void mergeFileLists(Map<String, FileInfo> otherMap) {
+
+        System.out.println("Merging the incoming map");
+
         // Get key sets for efficient comparison
         Set<String> localSet = internalMap.keySet();
         Set<String> remoteSet = otherMap.keySet();
@@ -359,8 +362,6 @@ public class GlobalMap {
         // Create a new HashMap from the entries of the ConcurrentHashMap.
         // This provides a point-in-time snapshot that is safe to iterate over
         // and send to another node without worrying about concurrent modifications.
-
-        System.out.println("The internal map of the globalMap is asked Map : " + internalMap);
         return new HashMap<>(internalMap);
 
 

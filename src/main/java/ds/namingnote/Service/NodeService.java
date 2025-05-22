@@ -121,8 +121,8 @@ public class NodeService {
 
             //set previous and next of other node
 
-            setOtherNextNode(ip, nextNode, name);
-            setOtherPreviousNode(ip, nextNode, name);
+            setOtherNextNode(ip, currentNode, name);
+            setOtherPreviousNode(ip, currentNode, name);
 
             //set previous and next of this node
             nextNode = incommingNode;
@@ -131,33 +131,99 @@ public class NodeService {
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
             replicationService.start();
             return;
-        }else {
+        //only 2 nodes are present in a loop
+        }else if (nextNode == previousNode) {
+            //node is at top end of loop
+            if (nextNode.getID() < currentNode.getID()){
+                //new node is largest in the network
+                if (incommingNode.getID() > currentNode.getID()) {
+                    setNextNode(incommingNode);
+                    setOtherPreviousNode(ip, currentNode, name);
+                }
+                //new node sits in between the 2 nodes
+                else if (incommingNode.getID() > previousNode.getID()) {
+                    setPreviousNode(incommingNode);
+                    setOtherNextNode(ip, currentNode, name);
+                }
+                //new node is smallest in the network
+                else if (incommingNode.getID() < previousNode.getID()){
+                    setNextNode(incommingNode);
+                    setOtherPreviousNode(ip,currentNode,name);
+                }
+            //node is at bottom end of loop
+            }else if (nextNode.getID() > currentNode.getID()) {
+                //new node is smallest in network
+                if (incommingNode.getID() < currentNode.getID()){
+                    setPreviousNode(incommingNode);
+                    setOtherNextNode(ip ,currentNode,name);
+                }
+                //new node is biggest in network
+                else if (incommingNode.getID() > nextNode.getID()){
+                    setPreviousNode(incommingNode);
+                    setOtherNextNode(ip ,currentNode ,name);
+                }
+                //new node sits in between the 2 nodes
+                else if (incommingNode.getID() < nextNode.getID()) {
+                    setNextNode(incommingNode);
+                    setOtherPreviousNode(ip, currentNode, name);
+                }
 
-            if (nameHash > previousNode.getID()) {
+            //more than 2 nodes are present on the network
+            }else{
+                //new node needs to be seeded in between existing nodes
+                if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
+                    setNextNode(incommingNode);
+                    setOtherPreviousNode(ip , currentNode , name);
+                } else if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() > previousNode.getID()) {
+                    setPreviousNode(incommingNode);
+                    setOtherNextNode(ip, currentNode, name);
+                }
+                //check edge cases where new node is smallest or biggest on the network
 
-                //this node will be placed as nextID of the new node.
-                setOtherNextNode(ip, currentNode, name);
+                //this node is the smallest or biggest node (when the ring wraps around)
+                if (previousNode.getID() > nextNode.getID()) {
+                    //new node is biggest in network
+                    if (incommingNode.getID() > previousNode.getID()) {
+                        setPreviousNode(incommingNode);
+                        setOtherNextNode(ip, currentNode, name);
+                    }
+                    //new node is smallest in network
+                    else if (incommingNode.getID() < currentNode.getID()) {
+                        setNextNode(incommingNode);
+                        setOtherPreviousNode(ip, currentNode, name);
+                    }
+                    //new node sits in between currentNode and nextNode (wrapping around)
+                    else if (incommingNode.getID() > currentNode.getID()) {
+                        setNextNode(incommingNode);
+                        setOtherPreviousNode(ip, currentNode, name);
+                    }
+                    //new node sits in between previousNode and currentNode (wrapping around)
+                    else if (incommingNode.getID() < previousNode.getID()) {
+                        setPreviousNode(incommingNode);
+                        setOtherNextNode(ip, currentNode, name);
+                    }
 
-                //the new node needs to be previous of this node
-                setPreviousNode(incommingNode);
-
-                System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, new previous node : " + name);
+                } else {
+                    // Standard case where the ring is not wrapping around based on IDs
+                    // New node is the smallest
+                    if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() < previousNode.getID()) {
+                        setPreviousNode(incommingNode);
+                        setOtherNextNode(ip, currentNode, name);
+                    }
+                    // New node is the largest
+                    else if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() > nextNode.getID()) {
+                        setNextNode(incommingNode);
+                        setOtherPreviousNode(ip, currentNode, name);
+                    }
+                }
 
             }
-            if (nameHash < nextNode.getID()) {
 
-
-                //this node will be previousID of new node
-                setOtherPreviousNode(ip, currentNode, name);
-
-                //the new node needs to be next of this node
-                setNextNode(incommingNode);
-
-                System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, new next node : " + name);
-            }
+            System.out.println("Node " + currentNode.getID() + ": Processed multicast from " + name + "(" + incommingNode.getID() + ")");
+            System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() : "null"));
+            System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() : "null"));
             replicationService.start();
-
-
+            
         }
 
     }

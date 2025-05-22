@@ -82,9 +82,6 @@ public class ReplicationService {
 
             }
 
-
-
-
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }

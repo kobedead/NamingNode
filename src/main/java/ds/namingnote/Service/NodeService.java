@@ -133,8 +133,10 @@ public class NodeService {
             return;
         //only 2 nodes are present in a loop
         }else if (nextNode == previousNode) {
+            System.out.println("Only 2 node present, third wants to join");
             //node is at top end of loop
             if (nextNode.getID() < currentNode.getID()){
+                System.out.println("Node is at the top end of the loop");
                 //new node is largest in the network
                 if (incommingNode.getID() > currentNode.getID()) {
                     setNextNode(incommingNode);
@@ -152,6 +154,7 @@ public class NodeService {
                 }
             //node is at bottom end of loop
             }else if (nextNode.getID() > currentNode.getID()) {
+                System.out.println("Node is a the bottom end of the loop");
                 //new node is smallest in network
                 if (incommingNode.getID() < currentNode.getID()){
                     setPreviousNode(incommingNode);
@@ -170,6 +173,7 @@ public class NodeService {
 
             //more than 2 nodes are present on the network
             }else{
+                System.out.println("More than 2 node present");
                 //new node needs to be seeded in between existing nodes
                 if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
                     setNextNode(incommingNode);
@@ -223,7 +227,7 @@ public class NodeService {
             System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() : "null"));
             System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() : "null"));
             replicationService.start();
-            
+
         }
 
     }

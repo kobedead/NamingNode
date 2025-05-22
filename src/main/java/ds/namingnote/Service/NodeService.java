@@ -112,12 +112,10 @@ public class NodeService {
         int nameHash = Utilities.mapHash(name);
         Node incommingNode = new Node(nameHash , ip);
 
-        System.out.println("Multicast 4 : " + previousNode + currentNode + nextNode);
 
 
         //new node is the only one with me on network
-        if (currentNode == nextNode && currentNode == previousNode){
-            System.out.println("Multicast 5");
+        if (currentNode.getID() == nextNode.getID() && currentNode.getID() == previousNode.getID()){
 
             //now there are 2 node, so they both need to set their neighbors to each other.
 
@@ -135,16 +133,20 @@ public class NodeService {
             return;
 
 
+        //because of a weird bug, only one of the nodes receives the multicast on time. so I will set all nodes from 1 node IG
+
         //only 2 nodes are present in a loop
-        }else if (nextNode == previousNode) {
+        }else if (nextNode.getID() == previousNode.getID()) {
             System.out.println("Only 2 node present, third wants to join");
             //node is at top end of loop
             if (nextNode.getID() < currentNode.getID()){
                 System.out.println("Node is at the top end of the loop");
                 //new node is largest in the network
                 if (incommingNode.getID() > currentNode.getID()) {
+                    //setOtherPreviousNode(ip , nextNode , name);
                     setNextNode(incommingNode);
-                    setOtherPreviousNode(ip, currentNode, name);
+                    setOtherPreviousNode(ip, currentNode, name); //set new node
+                    //setOtherNextNode(ip , nextNode , name); //set new node
                 }
                 //new node sits in between the 2 nodes
                 else if (incommingNode.getID() > previousNode.getID()) {

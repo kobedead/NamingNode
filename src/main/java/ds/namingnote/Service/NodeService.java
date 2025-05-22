@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -451,25 +454,27 @@ public class NodeService {
         }
         String url = "http://" + targetNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/execute";
         System.out.println("Forwarding agent of type " + agent.getClass().getSimpleName() + " to: " + url);
-        try {
-            RestTemplate restTemplate = new RestTemplate(); // Use the bean
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM); // Sending serialized Java object
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(agent);
+            byte[] serializedAgent = bos.toByteArray();
 
-            HttpEntity<Serializable> requestEntity = new HttpEntity<>(agent, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            HttpEntity<byte[]> requestEntity = new HttpEntity<>(serializedAgent, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 System.out.println("Agent successfully forwarded to " + targetNode.getIP() + ". Response: " + response.getBody());
             } else {
-                System.out.println("Failed to forward agent to " + targetNode.getIP() + ". Status: " +
-                        response.getStatusCode() + ", Body: " + response.getBody());
-                // Potentially handle failure to forward (e.g., if targetNode also failed)
+                System.out.println("Failed to forward agent to " + targetNode.getIP() + ". Status: " + response.getStatusCode() + ", Body: " + response.getBody());
             }
-        } catch (Exception e) {
-            System.out.println("Error forwarding agent to " + targetNode.getIP()+ e);
-            // This could trigger another failure detection for targetNode
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
+          
     }
 
 

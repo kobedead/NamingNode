@@ -97,6 +97,10 @@ public class SyncAgent implements Runnable {
      * @return : response to the push
      */
     public ResponseEntity<String> forwardMap(Map<String, FileInfo> receivedMap) {
+        //first we merge the map we got with our own map
+        globalMap.mergeFileLists(receivedMap);
+
+
         Node currentNode = nodeService.getCurrentNode();
         Node nextNode = nodeService.getNextNode();
 
@@ -150,7 +154,7 @@ public class SyncAgent implements Runnable {
             ResponseEntity<Map<String, FileInfo>> response  = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, null, responseType);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, FileInfo> nextNodeFileList = (Map<String, FileInfo>) response.getBody();
+                Map<String, FileInfo> nextNodeFileList =  response.getBody();
                 logger.fine("SyncAgent: Received file list from next node " + nextNode.getID() + " with " + nextNodeFileList.size() + " entries.");
                 globalMap.mergeFileLists(nextNodeFileList);
             } else {

@@ -60,6 +60,13 @@ public class MulticastListener implements Runnable {
                 String message = new String(packet.getData(), 0, packet.getLength());
                 System.out.println("multicast message received : " + message + "from " + sourceAddress);
 
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+
 
                 // Check if the message contains the specific keyword
                 if (message.startsWith(NNConf.PREFIX)) {

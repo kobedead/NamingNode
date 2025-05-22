@@ -149,9 +149,9 @@ public class ReplicationService {
             else
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
+                System.out.println("We are the owner of the file");
                 if (!globalMap.containsKey(file.getName())){
-                    //this is the rare case where the file is owned by us and needs to be replicated to us
-                    //pure local file!!!!                                    //this is overkill
+                    System.out.println("Set owner in GlobalMap");
                     globalMap.setOwner(file.getName() ,nodeService.getCurrentNode().getIP());
                 }
         } catch (Exception e) {

@@ -83,10 +83,11 @@ public class GlobalMap {
     public void setOwner(String key, String newOwner) {
         FileInfo currentFileInfo = internalMap.get(key);
         if (currentFileInfo != null) {
-            // Assuming FileInfo's setOwner is thread-safe, we can call it directly.
-            // If not, you might need to synchronize on the FileInfo object itself.
             currentFileInfo.setOwner(newOwner);
             saveJSON(); // Persist the change
+        }
+        else {
+            put(key , new FileInfo(key , newOwner , null));
         }
     }
 

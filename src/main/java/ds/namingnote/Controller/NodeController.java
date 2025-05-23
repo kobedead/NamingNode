@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -138,7 +139,7 @@ public class NodeController {
 
     }
 
-    @GetMapping("/nextAndPrevious")
+    @GetMapping(value = "/nextAndPrevious", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
         NextAndPreviousNodeDTO nextAndPrevious = nodeService.getNextAndPrevious();
         return ResponseEntity.ok(nextAndPrevious);

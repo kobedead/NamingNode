@@ -535,8 +535,10 @@ public class NodeService {
     }
 
     public NextAndPreviousNodeDTO getNextAndPrevious() {
-        if (nextNode != null && previousNode != null ) {
-            return new NextAndPreviousNodeDTO(this.getNextNode().getID(), this.getPreviousNode().getID());
+        Node next = this.getNextNode();
+        Node previous = this.getPreviousNode();
+        if (next != null && previous != null ) {
+            return new NextAndPreviousNodeDTO(next.getID(), previous.getID());
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Next or previous node is null, is this the only node in the network?");
         }

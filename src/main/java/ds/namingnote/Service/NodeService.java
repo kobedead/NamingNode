@@ -401,8 +401,9 @@ public class NodeService {
                     System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
                     System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
 
-                    //we only need the previous node of the failed node (next is this node)
-                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+
+
+                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
                     System.out.println("FailedPrevNode : " + failedPreviousNode);
@@ -424,7 +425,7 @@ public class NodeService {
                     System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
 
                     //we only need the next node of failed node (previous is this node)
-                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
+                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
 
                     System.out.println("FailedNExtNode : " + failedNextNode);

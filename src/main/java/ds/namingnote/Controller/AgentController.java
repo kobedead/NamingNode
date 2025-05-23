@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ds.namingnote.Config.NNConf.FILES_DIR;
+
 
 @RestController
 @RequestMapping("/agent")
@@ -127,7 +129,7 @@ public class AgentController {
             //maybe add some checks that the object is the failure agent
 
             // Initialize transient fields
-            failureAgent.initialize(nodeService.getCurrentNode(), nodeService.getNextNode(), replicationService);
+            failureAgent.initialize(nodeService.getCurrentNode(), nodeService.getNextNode(), replicationService , FILES_DIR);
 
             Thread agentThread = new Thread(failureAgent);
             agentThread.setName("MobileAgentThread-" + failureAgent.getClass().getSimpleName() + "-" + currentNode.getID());

@@ -78,6 +78,7 @@ public class FailureAgent implements Runnable, Serializable {
             //go over all local files of this node
             for (File localFile : localFiles) {
                 if (localFile.isFile()) {
+                    logger.info(" FailureAgent: Found a file on current node");
                     String filename = localFile.getName();
                     //check if the FileInfo of this file is present -> should be
                     if (globalMap.containsKey(filename)){
@@ -87,10 +88,10 @@ public class FailureAgent implements Runnable, Serializable {
                             logger.info(" FailureAgent: Found a file that belongs to the Failed Node");
                             //if the new owner doesnt have the file already -> send
                             if (info.containsAsReference(newOwnerNode.getIP())){
-                                System.out.println(" FailureAgent: The NewOwner node already has the file of the Failed node as Replica");
+                                logger.info(" FailureAgent: The NewOwner node already has the file of the Failed node as Replica");
 
                             }else{
-                                System.out.println(" FailureAgent: The NewOwner node Doesnt have the file -> send it ");
+                                logger.info(" FailureAgent: The NewOwner node Doesnt have the file -> send it ");
                                 //the new node doesnt have the file already -> send file with ref = node -> owner
                                 replicationService.sendFile(newOwnerNode.getIP(),localFile, newOwnerNode.getIP());
                                 //we can implement that the receiving method also sets the owner in his map -> faster propagation
@@ -103,7 +104,9 @@ public class FailureAgent implements Runnable, Serializable {
                         }
                     }
 
-                }
+                }else
+                    logger.info(" FailureAgent: Found a NON-file in the dir");
+
             }
 
             logger.fine("FailureAgent: Scanned the full directory and normally send all the files");

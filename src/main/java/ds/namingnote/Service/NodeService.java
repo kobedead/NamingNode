@@ -5,6 +5,7 @@ import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
+import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -531,5 +532,13 @@ public class NodeService {
 
     public boolean isRunning() {
         return running;
+    }
+
+    public NextAndPreviousNodeDTO getNextAndPrevious() {
+        if (nextNode != null && previousNode != null ) {
+            return new NextAndPreviousNodeDTO(this.getNextNode().getID(), this.getPreviousNode().getID());
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Next or previous node is null, is this the only node in the network?");
+        }
     }
 }

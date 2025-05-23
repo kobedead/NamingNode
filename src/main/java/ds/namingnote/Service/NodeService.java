@@ -405,6 +405,8 @@ public class NodeService {
                     Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
+                    System.out.println("FailedPrevNode : " + failedPreviousNode);
+
                     setOtherNextNode(failedPreviousNode.getIP() , currentNode , failedPreviousNode.getIP());
                     setPreviousNode(failedPreviousNode);
 
@@ -424,6 +426,9 @@ public class NodeService {
                     //we only need the next node of failed node (previous is this node)
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
+
+                    System.out.println("FailedNExtNode : " + failedNextNode);
+
 
                     setOtherPreviousNode(failedNextNode.getIP() , currentNode , failedNextNode.getIP());
                     setNextNode(failedNextNode);

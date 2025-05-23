@@ -140,6 +140,7 @@ public class NodeController {
 
     @GetMapping("/nextAndPrevious")
     public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
-        return ResponseEntity.ok(new NextAndPreviousNodeDTO(nodeService.getNextNode(), nodeService.getPreviousNode()));
+        System.out.println("Get next and previous on node: " + nodeService.getNextNode().getID() + " " + nodeService.getPreviousNode().getID());
+        return ResponseEntity.ok(new NextAndPreviousNodeDTO(nodeService.getNextNode().getID(), nodeService.getPreviousNode().getID()));
     }
 }

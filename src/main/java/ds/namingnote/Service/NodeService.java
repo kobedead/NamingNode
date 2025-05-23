@@ -54,20 +54,14 @@ public class NodeService {
     }
 
     public void startProcessing() {
-        if (startSignal.availablePermits() == 0) {
-            startSignal.release(); // unblocks waiting thread
-            running = true;
-            System.out.println("Start signal received for node");
-        } else {
+        if (running) {
             System.out.println("Node is already running");
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already running");
         }
-    }
 
-    public String shutdownProcessing() {
-        running = false;
-        System.out.println("Shutdown requested. Going back to waiting state...");
-        return "Shutdown requested. Going back to waiting state...";
+        running = true;
+        startSignal.release(); // now it's safe to unblock
+        System.out.println("Start signal received for node");
     }
 
 
@@ -469,7 +463,8 @@ public class NodeService {
 
             RestTemplate restTemplate = new RestTemplate();
             restTemplate.delete(deleteUri);
-            shutdownProcessing();
+            running = false;
+            System.out.println("Shutdown requested. Going back to waiting state...");
         } else {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already shut down");
         }

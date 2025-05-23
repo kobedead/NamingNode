@@ -87,10 +87,10 @@ public class FailureAgent implements Runnable, Serializable {
                             logger.info(" FailureAgent: Found a file that belongs to the Failed Node");
                             //if the new owner doesnt have the file already -> send
                             if (info.containsAsReference(newOwnerNode.getIP())){
-                                logger.info(" FailureAgent: The NewOwner node already has the file of the Failed node as Replica");
+                                System.out.println(" FailureAgent: The NewOwner node already has the file of the Failed node as Replica");
 
                             }else{
-                                logger.info(" FailureAgent: The NewOwner node Doesnt have the file -> send it ");
+                                System.out.println(" FailureAgent: The NewOwner node Doesnt have the file -> send it ");
                                 //the new node doesnt have the file already -> send file with ref = node -> owner
                                 replicationService.sendFile(newOwnerNode.getIP(),localFile, newOwnerNode.getIP());
                                 //we can implement that the receiving method also sets the owner in his map -> faster propagation

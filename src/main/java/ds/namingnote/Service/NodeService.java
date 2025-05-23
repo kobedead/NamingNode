@@ -403,6 +403,11 @@ public class NodeService {
                     setNextNode(failedNextNode);
                     setOtherPreviousNode(failedNextNode.getIP() , currentNode , failedNextNode.getIP());
 
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
+
+
                 }
 
             } else {

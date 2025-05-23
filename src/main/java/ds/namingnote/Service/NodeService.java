@@ -53,15 +53,14 @@ public class NodeService {
         startSignal.acquire(); // blocks until released
     }
 
-    public String startProcessing() {
+    public void startProcessing() {
         if (startSignal.availablePermits() == 0) {
             startSignal.release(); // unblocks waiting thread
             running = true;
             System.out.println("Start signal received for node");
-            return "Start signal received for node";
         } else {
             System.out.println("Node is already running");
-            return "Node is already running.";
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already running");
         }
     }
 
@@ -69,8 +68,6 @@ public class NodeService {
         running = false;
         System.out.println("Shutdown requested. Going back to waiting state...");
         return "Shutdown requested. Going back to waiting state...";
-        // Do any cleanup or state reset here
-        // Do NOT release any permits — `waitForStartSignal()` will block again
     }
 
 
@@ -458,22 +455,24 @@ public class NodeService {
 
 
 
-    public String shutdown() {
+    public void shutdown() {
+        if (running) {
+            //before remove node out of network -> file transfer
+            replicationService.shutdown();
 
-        //before remove node out of network -> file transfer
-        replicationService.shutdown();
+            //remove node from network
+            setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
+            setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
 
-        //remove node from network
-        setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
-        setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
+            String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
+            String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
 
-        String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
-        String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
-
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(deleteUri);
-
-        return shutdownProcessing();
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.delete(deleteUri);
+            shutdownProcessing();
+        } else {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already shut down");
+        }
     }
 
 

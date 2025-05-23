@@ -115,14 +115,14 @@ public class NodeController {
 
     @DeleteMapping("/shutdown")
     public ResponseEntity<String> shutdown(){
-        String message = nodeService.shutdown();
-        return ResponseEntity.ok(message);
+        nodeService.shutdown();
+        return ResponseEntity.ok("Node stopped successfully!");
     }
 
     @PostMapping("/start")
     public ResponseEntity<String> start() {
-        String message = nodeService.startProcessing();
-        return ResponseEntity.ok(message);
+        nodeService.startProcessing();
+        return ResponseEntity.ok("Node started successfully!");
     }
 
 

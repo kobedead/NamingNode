@@ -32,6 +32,7 @@ public class NodeService {
     Node nextNode = null;
     Node previousNode = null;
 
+    private boolean biggest;
 
     private boolean namingServerResponse = false;
 
@@ -134,6 +135,11 @@ public class NodeService {
             nextNode = incommingNode;
             previousNode = incommingNode;
 
+            //check which one is biggest:
+            if (nextNode.getID() < currentNode.getID())
+                biggest = true;
+
+
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
             replicationService.start();
             return;
@@ -182,28 +188,47 @@ public class NodeService {
             }
         }
         //more than 2 nodes are present on the network
-
         else{
                 System.out.println("More than 2 node present");
-
-
                 //check edge cases where new node is smallest or biggest on the network
+                if (previousNode.getID() > nextNode.getID()){
+                    //this node is the smallest  (when the ring wraps around)
 
+                    if (!biggest) {
+                        //new node is biggest in network
+                        if (incommingNode.getID() > previousNode.getID()) {
+                            setPreviousNode(incommingNode);
+                            setOtherNextNode(ip, currentNode, name);
+                            SetOtherBiggest(ip);
+                            return;
+                        }
+                        //new node is smallest in network
+                        else if (incommingNode.getID() < currentNode.getID()) {
+                            setPreviousNode(incommingNode);
+                            setOtherNextNode(ip, currentNode, name);
+                            return;
+                        }
+                    }
+                    //this node is the biggest
+                    else if (biggest) {
+                        //new node is biggest in network
+                        if (incommingNode.getID() > previousNode.getID()) {
+                            setNextNode(incommingNode);
+                            setOtherPreviousNode(ip, currentNode, name);
+                            SetOtherBiggest(ip);
+                            setBiggest(false);
+                            return;
+                        }
+                        //new node is smallest in network
+                        else if (incommingNode.getID() < currentNode.getID()) {
+                            setNextNode(incommingNode);
+                            setOtherPreviousNode(ip, currentNode, name);
+                            return;
+                        }
+                    }
 
-                //this node is the smallest or biggest node (when the ring wraps around)
-                if (previousNode.getID() > nextNode.getID()) {
-                    //new node is biggest in network
-                    if (incommingNode.getID() > previousNode.getID()) {
-                        setPreviousNode(incommingNode);
-                        setOtherNextNode(ip, currentNode, name);
-                    }
-                    //new node is smallest in network
-                    else if (incommingNode.getID() < currentNode.getID()) {
-                        setNextNode(incommingNode);
-                        setOtherPreviousNode(ip, currentNode, name);
-                    }
                     //new node sits in between currentNode and nextNode (wrapping around)
-                    else if (incommingNode.getID() > currentNode.getID()) {
+                    if (incommingNode.getID() > currentNode.getID()) {
                         setNextNode(incommingNode);
                         setOtherPreviousNode(ip, currentNode, name);
                     }
@@ -224,17 +249,6 @@ public class NodeService {
                     }
                     else {
                         System.out.println("We got here");
-                        // Standard case where the ring is not wrapping around based on IDs
-                        // New node is the smallest
-                        if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() < previousNode.getID()) {
-                            setPreviousNode(incommingNode);
-                            setOtherNextNode(ip, currentNode, name);
-                        }
-                        // New node is the largest
-                        else if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() > nextNode.getID()) {
-                            setNextNode(incommingNode);
-                            setOtherPreviousNode(ip, currentNode, name);
-                        }
                     }
                 }
 
@@ -245,6 +259,29 @@ public class NodeService {
             System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() : "null"));
             replicationService.start();
 
+
+
+    }
+
+
+    public ResponseEntity<String> SetOtherBiggest(String ip){
+
+        String mapping = "/node/biggest";
+        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    uri, HttpMethod.POST, null, String.class);
+
+            System.out.println("setOtherBiggest : " +response.getBody());  //we need to check for error ig
+
+            return  response;                                  //check
+        } catch (Exception e) {
+            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
 
     }
@@ -517,5 +554,9 @@ public class NodeService {
 
     public Node getCurrentNode() {
         return currentNode;
+    }
+
+    public void setBiggest(boolean biggest) {
+        this.biggest = biggest;
     }
 }

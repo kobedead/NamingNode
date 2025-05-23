@@ -7,6 +7,7 @@ import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,6 +61,17 @@ public class NodeController {
     public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
         return replicationService.putFile(file , ipOfRef );
     }
+
+    @PostMapping("/biggest")
+    public ResponseEntity<String> ImTheBiggestNode()  {
+        nodeService.setBiggest(true);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body("Biggest set");
+    }
+
+
+
+
 
 
     /**

@@ -46,6 +46,7 @@ public class NodeService {
     private ReplicationService replicationService;
 
     private final Semaphore startSignal = new Semaphore(0); // initially blocked
+    boolean running = false;
 
     public void waitForStartSignal() throws InterruptedException {
         System.out.println("Waiting for start signal...");
@@ -55,6 +56,7 @@ public class NodeService {
     public String startProcessing() {
         if (startSignal.availablePermits() == 0) {
             startSignal.release(); // unblocks waiting thread
+            running = true;
             return "Start signal received by node";
         } else {
             return "Node is already running.";
@@ -62,6 +64,7 @@ public class NodeService {
     }
 
     public String shutdownProcessing() {
+        running = false;
         return "Shutdown requested. Going back to waiting state...";
         // Do any cleanup or state reset here
         // Do NOT release any permits — `waitForStartSignal()` will block again
@@ -346,10 +349,12 @@ public class NodeService {
 
     @Scheduled(fixedRate = 30000) // Runs every 30 seconds
     public void pingNextAndPreviousNode() {
-        System.out.println("Pinging previous and next nodes...");
+        if (running) {
+            System.out.println("Pinging previous and next nodes...");
 
-        pingNode(previousNode, "previous");
-        pingNode(nextNode, "next");
+            pingNode(previousNode, "previous");
+            pingNode(nextNode, "next");
+        }
     }
 
     private void pingNode(Node node, String label) {

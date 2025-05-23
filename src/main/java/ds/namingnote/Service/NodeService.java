@@ -168,7 +168,7 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW NEXT for " + currentId +
                     " (between " + currentId + " and " + nextId + ")");
             // My old nextNode (nextId) needs to update its previous pointer to incomingNode
-            setOtherPreviousNode(nextNode.getIP(), incomingNode, nextNode.getName()); // Tell old next about incoming
+            setOtherPreviousNode(nextNode.getIP(), incomingNode, name); // Tell old next about incoming
 
             // incomingNode's new next is my old nextNode
             setOtherNextNode(incomingNode.getIP(), nextNode, name);
@@ -201,7 +201,7 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW PREVIOUS for " + currentId +
                     " (between " + prevId + " and " + currentId + ")");
             // My old previousNode (prevId) needs to update its next pointer to incomingNode
-            setOtherNextNode(previousNode.getIP(), incomingNode, previousNode.getName()); // Tell old prev about incoming
+            setOtherNextNode(previousNode.getIP(), incomingNode, name); // Tell old prev about incoming
 
             // incomingNode's new previous is my old previousNode
             setOtherPreviousNode(incomingNode.getIP(), previousNode, name);

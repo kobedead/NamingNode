@@ -22,6 +22,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -43,7 +45,27 @@ public class NodeService {
     @Autowired
     private ReplicationService replicationService;
 
+    private final Semaphore startSignal = new Semaphore(0); // initially blocked
 
+    public void waitForStartSignal() throws InterruptedException {
+        System.out.println("Waiting for start signal...");
+        startSignal.acquire(); // blocks until released
+    }
+
+    public String startProcessing() {
+        if (startSignal.availablePermits() == 0) {
+            startSignal.release(); // unblocks waiting thread
+            return "Start signal received by node";
+        } else {
+            return "Node is already running.";
+        }
+    }
+
+    public String shutdownProcessing() {
+        return "Shutdown requested. Going back to waiting state...";
+        // Do any cleanup or state reset here
+        // Do NOT release any permits — `waitForStartSignal()` will block again
+    }
 
 
     /**
@@ -428,7 +450,7 @@ public class NodeService {
 
 
 
-    public void shutdown(){
+    public String shutdown() {
 
         //before remove node out of network -> file transfer
         replicationService.shutdown();
@@ -443,7 +465,7 @@ public class NodeService {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.delete(deleteUri);
 
-        System.exit(0);
+        return shutdownProcessing();
     }
 
 

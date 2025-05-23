@@ -7,6 +7,7 @@ import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -112,12 +113,16 @@ public class NodeController {
         return ResponseEntity.ok("alive");
     }
 
-    @CrossOrigin(origins = "*")
     @DeleteMapping("/shutdown")
-    public void shutdown(){
+    public String shutdown(){
+        return nodeService.shutdown();
 
-        nodeService.shutdown();
+    }
 
+    @PostMapping("/start")
+    public ResponseEntity<String> start() {
+        nodeService.startProcessing();
+        return ResponseEntity.ok("Start signal sent.");
     }
 
 

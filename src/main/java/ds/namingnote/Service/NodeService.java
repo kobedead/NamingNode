@@ -178,21 +178,17 @@ public class NodeService {
                     setOtherPreviousNode(ip, currentNode, name);
                 }
 
-                //more than 2 nodes are present on the network
 
             }
         }
+        //more than 2 nodes are present on the network
+
         else{
                 System.out.println("More than 2 node present");
-                //new node needs to be seeded in between existing nodes
-                if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
-                    setNextNode(incommingNode);
-                    setOtherPreviousNode(ip , currentNode , name);
-                } else if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() > previousNode.getID()) {
-                    setPreviousNode(incommingNode);
-                    setOtherNextNode(ip, currentNode, name);
-                }
+
+
                 //check edge cases where new node is smallest or biggest on the network
+
 
                 //this node is the smallest or biggest node (when the ring wraps around)
                 if (previousNode.getID() > nextNode.getID()) {
@@ -218,16 +214,27 @@ public class NodeService {
                     }
 
                 } else {
-                    // Standard case where the ring is not wrapping around based on IDs
-                    // New node is the smallest
-                    if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() < previousNode.getID()) {
+                    //new node needs to be seeded in between existing nodes
+                    if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
+                        setNextNode(incommingNode);
+                        setOtherPreviousNode(ip , currentNode , name);
+                    } else if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() > previousNode.getID()) {
                         setPreviousNode(incommingNode);
                         setOtherNextNode(ip, currentNode, name);
                     }
-                    // New node is the largest
-                    else if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() > nextNode.getID()) {
-                        setNextNode(incommingNode);
-                        setOtherPreviousNode(ip, currentNode, name);
+                    else {
+                        System.out.println("We got here");
+                        // Standard case where the ring is not wrapping around based on IDs
+                        // New node is the smallest
+                        if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() < previousNode.getID()) {
+                            setPreviousNode(incommingNode);
+                            setOtherNextNode(ip, currentNode, name);
+                        }
+                        // New node is the largest
+                        else if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() > nextNode.getID()) {
+                            setNextNode(incommingNode);
+                            setOtherPreviousNode(ip, currentNode, name);
+                        }
                     }
                 }
 

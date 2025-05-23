@@ -263,7 +263,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherNextID for node" + name + " on ip " + ip);
+        System.out.println("setOtherNextID to" + node.getID() + " on ip " + ip);
         System.out.println("Call to " + uri);
 
         try {
@@ -290,7 +290,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
+        System.out.println("setOtherPreviousID to " + node.getID() + " on ip " + ip);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(

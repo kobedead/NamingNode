@@ -37,6 +37,8 @@ public class NamingNoteApplication {
                 System.out.println("No service name provided. Use --name=YourName");
             }
         }
+
+
     }
 
 

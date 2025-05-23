@@ -31,7 +31,7 @@ public class SyncAgent implements Runnable {
 
     private  NodeService nodeService;
 
-    private long syncIntervalMillis = 30000; // e.g., 30 seconds
+    private long syncIntervalMillis = 20000; // e.g., 30 seconds
 
     // Constructor used when creating the agent locally
     public SyncAgent() {

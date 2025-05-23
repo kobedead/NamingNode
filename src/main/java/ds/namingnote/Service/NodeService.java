@@ -136,8 +136,10 @@ public class NodeService {
             previousNode = incommingNode;
 
             //check which one is biggest:
-            if (nextNode.getID() < currentNode.getID())
+            if (nextNode.getID() < currentNode.getID()){
+                System.out.println("Im the biggest , setting myself");
                 biggest = true;
+            }
 
 
             System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
@@ -154,6 +156,8 @@ public class NodeService {
                 if (incommingNode.getID() > currentNode.getID()) {
                     setNextNode(incommingNode);
                     setOtherPreviousNode(ip, currentNode, name); //set new node
+                    setOtherBiggest(ip);
+                    setBiggest(false);
                 }
                 //new node sits in between the 2 nodes
                 else if (incommingNode.getID() > previousNode.getID()) {
@@ -177,6 +181,8 @@ public class NodeService {
                 else if (incommingNode.getID() > nextNode.getID()) {
                     setPreviousNode(incommingNode);
                     setOtherNextNode(ip, currentNode, name);
+                    setOtherBiggest(ip);
+                    setBiggest(false);
                 }
                 //new node sits in between the 2 nodes
                 else if (incommingNode.getID() < nextNode.getID()) {
@@ -199,7 +205,7 @@ public class NodeService {
                         if (incommingNode.getID() > previousNode.getID()) {
                             setPreviousNode(incommingNode);
                             setOtherNextNode(ip, currentNode, name);
-                            SetOtherBiggest(ip);
+                            setOtherBiggest(ip);
                             return;
                         }
                         //new node is smallest in network
@@ -215,7 +221,7 @@ public class NodeService {
                         if (incommingNode.getID() > previousNode.getID()) {
                             setNextNode(incommingNode);
                             setOtherPreviousNode(ip, currentNode, name);
-                            SetOtherBiggest(ip);
+                            setOtherBiggest(ip);
                             setBiggest(false);
                             return;
                         }
@@ -264,7 +270,7 @@ public class NodeService {
     }
 
 
-    public ResponseEntity<String> SetOtherBiggest(String ip){
+    public ResponseEntity<String> setOtherBiggest(String ip){
 
         String mapping = "/node/biggest";
         String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;

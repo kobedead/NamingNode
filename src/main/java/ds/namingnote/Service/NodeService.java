@@ -391,8 +391,8 @@ public class NodeService {
                     Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
-                    setPreviousNode(failedPreviousNode);
                     setOtherNextNode(failedPreviousNode.getIP() , currentNode , failedPreviousNode.getIP());
+                    setPreviousNode(failedPreviousNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
@@ -406,8 +406,8 @@ public class NodeService {
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
 
-                    setNextNode(failedNextNode);
                     setOtherPreviousNode(failedNextNode.getIP() , currentNode , failedNextNode.getIP());
+                    setNextNode(failedNextNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);

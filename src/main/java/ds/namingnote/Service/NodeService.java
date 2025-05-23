@@ -115,6 +115,9 @@ public class NodeService {
         int nameHash = Utilities.mapHash(name);
         Node incommingNode = new Node(nameHash , ip);
 
+        System.out.println("Processing Multicastt");
+        System.out.println("ip : " + ip + "     name : " + name);
+        System.out.println("nextID :" + nextNode.getID() + "    prevID : " + previousNode.getID());
 
 
         //new node is the only one with me on network
@@ -139,7 +142,7 @@ public class NodeService {
         }else if (nextNode.getID() == previousNode.getID()) {
             System.out.println("Only 2 node present, third wants to join");
             //node is at top end of loop
-            if (nextNode.getID() < currentNode.getID()){
+            if (nextNode.getID() < currentNode.getID()) {
                 System.out.println("Node is at the top end of the loop");
                 //new node is largest in the network
                 if (incommingNode.getID() > currentNode.getID()) {
@@ -152,22 +155,22 @@ public class NodeService {
                     setOtherNextNode(ip, currentNode, name);
                 }
                 //new node is smallest in the network
-                else if (incommingNode.getID() < previousNode.getID()){
+                else if (incommingNode.getID() < previousNode.getID()) {
                     setNextNode(incommingNode);
-                    setOtherPreviousNode(ip,currentNode,name);
+                    setOtherPreviousNode(ip, currentNode, name);
                 }
-            //node is at bottom end of loop
-            }else if (nextNode.getID() > currentNode.getID()) {
+                //node is at bottom end of loop
+            } else if (nextNode.getID() > currentNode.getID()) {
                 System.out.println("Node is a the bottom end of the loop");
                 //new node is smallest in network
-                if (incommingNode.getID() < currentNode.getID()){
+                if (incommingNode.getID() < currentNode.getID()) {
                     setPreviousNode(incommingNode);
-                    setOtherNextNode(ip ,currentNode,name);
+                    setOtherNextNode(ip, currentNode, name);
                 }
                 //new node is biggest in network
-                else if (incommingNode.getID() > nextNode.getID()){
+                else if (incommingNode.getID() > nextNode.getID()) {
                     setPreviousNode(incommingNode);
-                    setOtherNextNode(ip ,currentNode ,name);
+                    setOtherNextNode(ip, currentNode, name);
                 }
                 //new node sits in between the 2 nodes
                 else if (incommingNode.getID() < nextNode.getID()) {
@@ -175,8 +178,11 @@ public class NodeService {
                     setOtherPreviousNode(ip, currentNode, name);
                 }
 
-            //more than 2 nodes are present on the network
-            }else{
+                //more than 2 nodes are present on the network
+
+            }
+        }
+        else{
                 System.out.println("More than 2 node present");
                 //new node needs to be seeded in between existing nodes
                 if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
@@ -225,14 +231,14 @@ public class NodeService {
                     }
                 }
 
-            }
+        }
 
             System.out.println("Node " + currentNode.getID() + ": Processed multicast from " + name + "(" + incommingNode.getID() + ")");
             System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() : "null"));
             System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() : "null"));
             replicationService.start();
 
-        }
+
 
     }
 

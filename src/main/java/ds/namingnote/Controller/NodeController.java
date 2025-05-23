@@ -2,6 +2,7 @@ package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
+import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -137,8 +138,8 @@ public class NodeController {
 
     }
 
-
-
-
-
+    @GetMapping("/nextAndPrevious")
+    public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
+        return ResponseEntity.ok(new NextAndPreviousNodeDTO(nodeService.getNextNode(), nodeService.getPreviousNode()));
+    }
 }

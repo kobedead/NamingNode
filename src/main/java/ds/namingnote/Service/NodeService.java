@@ -218,7 +218,7 @@ public class NodeService {
                     //this node is the biggest
                     else if (biggest) {
                         //new node is biggest in network
-                        if (incommingNode.getID() > previousNode.getID()) {
+                        if (incommingNode.getID() > currentNode.getID()) {
                             setNextNode(incommingNode);
                             setOtherPreviousNode(ip, currentNode, name);
                             setOtherBiggest(ip);
@@ -226,7 +226,7 @@ public class NodeService {
                             return;
                         }
                         //new node is smallest in network
-                        else if (incommingNode.getID() < currentNode.getID()) {
+                        else if (incommingNode.getID() < nextNode.getID()) {
                             setNextNode(incommingNode);
                             setOtherPreviousNode(ip, currentNode, name);
                             return;

@@ -57,14 +57,17 @@ public class NodeService {
         if (startSignal.availablePermits() == 0) {
             startSignal.release(); // unblocks waiting thread
             running = true;
-            return "Start signal received by node";
+            System.out.println("Start signal received for node");
+            return "Start signal received for node";
         } else {
+            System.out.println("Node is already running");
             return "Node is already running.";
         }
     }
 
     public String shutdownProcessing() {
         running = false;
+        System.out.println("Shutdown requested. Going back to waiting state...");
         return "Shutdown requested. Going back to waiting state...";
         // Do any cleanup or state reset here
         // Do NOT release any permits — `waitForStartSignal()` will block again

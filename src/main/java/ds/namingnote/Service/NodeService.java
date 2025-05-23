@@ -531,4 +531,8 @@ public class NodeService {
     public Node getCurrentNode() {
         return currentNode;
     }
+
+    public boolean isRunning() {
+        return running;
+    }
 }

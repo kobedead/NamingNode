@@ -1,7 +1,6 @@
 package ds.namingnote.Service;
 
 import ds.namingnote.Agents.FailureAgent;
-import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
@@ -23,9 +22,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +32,7 @@ public class NodeService {
     Node nextNode = null;
     Node previousNode = null;
 
+    private boolean biggest;
 
     private boolean namingServerResponse = false;
 
@@ -132,127 +130,140 @@ public class NodeService {
      * @param name name of node (sender multicast)
      */
     public void processIncomingMulticast(String ip, String name){
-        int nameHash = Utilities.mapHash(name);
-        Node incommingNode = new Node(nameHash , ip);
+        int incomingNodeId = Utilities.mapHash(name);
+        Node incomingNode = new Node(incomingNodeId, ip);
 
-
-
-        //new node is the only one with me on network
-        if (currentNode.getID() == nextNode.getID() && currentNode.getID() == previousNode.getID()){
-
-            //now there are 2 node, so they both need to set their neighbors to each other.
-
-            //set previous and next of other node
-
-            setOtherNextNode(ip, currentNode, name);
-            setOtherPreviousNode(ip, currentNode, name);
-
-            //set previous and next of this node
-            nextNode = incommingNode;
-            previousNode = incommingNode;
-
-            System.out.println("Node : " + currentNode.getID() + " .Multicast Processed, 2 Nodes On Network");
-            replicationService.start();
+        // 0. Ignore if it's our own multicast
+        if (incomingNode.getID() == currentNode.getID()) {
             return;
-
-        //only 2 nodes are present in a loop
-        }else if (nextNode.getID() == previousNode.getID()) {
-            System.out.println("Only 2 node present, third wants to join");
-            //node is at top end of loop
-            if (nextNode.getID() < currentNode.getID()){
-                System.out.println("Node is at the top end of the loop");
-                //new node is largest in the network
-                if (incommingNode.getID() > currentNode.getID()) {
-                    setNextNode(incommingNode);
-                    setOtherPreviousNode(ip, currentNode, name); //set new node
-                }
-                //new node sits in between the 2 nodes
-                else if (incommingNode.getID() > previousNode.getID()) {
-                    setPreviousNode(incommingNode);
-                    setOtherNextNode(ip, currentNode, name);
-                }
-                //new node is smallest in the network
-                else if (incommingNode.getID() < previousNode.getID()){
-                    setNextNode(incommingNode);
-                    setOtherPreviousNode(ip,currentNode,name);
-                }
-            //node is at bottom end of loop
-            }else if (nextNode.getID() > currentNode.getID()) {
-                System.out.println("Node is a the bottom end of the loop");
-                //new node is smallest in network
-                if (incommingNode.getID() < currentNode.getID()){
-                    setPreviousNode(incommingNode);
-                    setOtherNextNode(ip ,currentNode,name);
-                }
-                //new node is biggest in network
-                else if (incommingNode.getID() > nextNode.getID()){
-                    setPreviousNode(incommingNode);
-                    setOtherNextNode(ip ,currentNode ,name);
-                }
-                //new node sits in between the 2 nodes
-                else if (incommingNode.getID() < nextNode.getID()) {
-                    setNextNode(incommingNode);
-                    setOtherPreviousNode(ip, currentNode, name);
-                }
-
-            //more than 2 nodes are present on the network
-            }else{
-                System.out.println("More than 2 node present");
-                //new node needs to be seeded in between existing nodes
-                if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() < nextNode.getID()){
-                    setNextNode(incommingNode);
-                    setOtherPreviousNode(ip , currentNode , name);
-                } else if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() > previousNode.getID()) {
-                    setPreviousNode(incommingNode);
-                    setOtherNextNode(ip, currentNode, name);
-                }
-                //check edge cases where new node is smallest or biggest on the network
-
-                //this node is the smallest or biggest node (when the ring wraps around)
-                if (previousNode.getID() > nextNode.getID()) {
-                    //new node is biggest in network
-                    if (incommingNode.getID() > previousNode.getID()) {
-                        setPreviousNode(incommingNode);
-                        setOtherNextNode(ip, currentNode, name);
-                    }
-                    //new node is smallest in network
-                    else if (incommingNode.getID() < currentNode.getID()) {
-                        setNextNode(incommingNode);
-                        setOtherPreviousNode(ip, currentNode, name);
-                    }
-                    //new node sits in between currentNode and nextNode (wrapping around)
-                    else if (incommingNode.getID() > currentNode.getID()) {
-                        setNextNode(incommingNode);
-                        setOtherPreviousNode(ip, currentNode, name);
-                    }
-                    //new node sits in between previousNode and currentNode (wrapping around)
-                    else if (incommingNode.getID() < previousNode.getID()) {
-                        setPreviousNode(incommingNode);
-                        setOtherNextNode(ip, currentNode, name);
-                    }
-
-                } else {
-                    // Standard case where the ring is not wrapping around based on IDs
-                    // New node is the smallest
-                    if (incommingNode.getID() < currentNode.getID() && incommingNode.getID() < previousNode.getID()) {
-                        setPreviousNode(incommingNode);
-                        setOtherNextNode(ip, currentNode, name);
-                    }
-                    // New node is the largest
-                    else if (incommingNode.getID() > currentNode.getID() && incommingNode.getID() > nextNode.getID()) {
-                        setNextNode(incommingNode);
-                        setOtherPreviousNode(ip, currentNode, name);
-                    }
-                }
-
-            }
-
-            System.out.println("Node " + currentNode.getID() + ": Processed multicast from " + name + "(" + incommingNode.getID() + ")");
-            System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() : "null"));
-            System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() : "null"));
-            replicationService.start();
-
         }
+
+        System.out.println("Processing Multicast from: " + name + " (ID: " + incomingNodeId + ") received by Node " + currentNode.getID());
+        System.out.println("Current State: My ID=" + currentNode.getID() + ", Prev ID=" + previousNode.getID() + ", Next ID=" + nextNode.getID());
+
+        // Cache current IDs for clarity
+        int currentId = currentNode.getID();
+        int nextId = nextNode.getID();
+        int prevId = previousNode.getID();
+
+        // Case 1: This is the first other node joining (current node was alone).
+        // Both nextNode and previousNode point to currentNode itself.
+        if (currentId == nextId && currentId == prevId) {
+            System.out.println("  Decision: Current node was alone. Connecting to " + incomingNodeId);
+            // Current node updates its pointers
+            setNextNode(incomingNode);
+            setPreviousNode(incomingNode);
+
+            // Tell incomingNode that this currentNode is its next and previous
+            setOtherNextNode(incomingNode.getIP(), currentNode, name /* name of incomingNode for log on its side */);
+            setOtherPreviousNode(incomingNode.getIP(), currentNode, name);
+
+            replicationService.start(); // Or other post-join actions
+            logFinalState(name, incomingNodeId);
+            return;
+        }
+
+        // General Case: At least two nodes already in the network (including self).
+        // We need to determine if `incomingNode` fits between `currentNode` and `nextNode`
+        // OR between `previousNode` and `currentNode`.
+
+        // Condition 1: Does incomingNode fit between ME (currentNode) and my NEXT?
+        // (currentNode) --> incomingNode --> (nextNode)
+        boolean fitsAsMyNext = false;
+        if (currentId < nextId) { // Standard case: current ID < next ID (e.g., 10 -> 20)
+            if (incomingNodeId > currentId && incomingNodeId < nextId) {
+                fitsAsMyNext = true;
+            }
+        } else { // Wrap-around case: current ID > next ID (e.g., 90 -> 10, current is 'largest')
+            if (incomingNodeId > currentId || incomingNodeId < nextId) {
+                // incoming is larger than me OR smaller than my next (which is the 'smallest')
+                fitsAsMyNext = true;
+            }
+        }
+
+        if (fitsAsMyNext) {
+            System.out.println("  Decision: " + incomingNodeId + " fits as NEW NEXT for " + currentId +
+                    " (between " + currentId + " and " + nextId + ")");
+            // My old nextNode (nextId) needs to update its previous pointer to incomingNode
+            setOtherPreviousNode(nextNode.getIP(), incomingNode, name); // Tell old next about incoming
+
+            // incomingNode's new next is my old nextNode
+            setOtherNextNode(incomingNode.getIP(), nextNode, name);
+            // incomingNode's new previous is me (currentNode)
+            setOtherPreviousNode(incomingNode.getIP(), currentNode, name);
+
+            // My new nextNode is incomingNode
+            setNextNode(incomingNode);
+
+            replicationService.start();
+            logFinalState(name, incomingNodeId);
+            return;
+        }
+
+        // Condition 2: Does incomingNode fit between my PREVIOUS and ME (currentNode)?
+        // (previousNode) --> incomingNode --> (currentNode)
+        boolean fitsAsMyPrevious = false;
+        if (prevId < currentId) { // Standard case: previous ID < current ID (e.g., 10 -> 20)
+            if (incomingNodeId > prevId && incomingNodeId < currentId) {
+                fitsAsMyPrevious = true;
+            }
+        } else { // Wrap-around case: previous ID > current ID (e.g., 90 -> 10, current is 'smallest')
+            if (incomingNodeId > prevId || incomingNodeId < currentId) {
+                // incoming is larger than my previous (which is 'largest') OR smaller than me
+                fitsAsMyPrevious = true;
+            }
+        }
+
+        if (fitsAsMyPrevious) {
+            System.out.println("  Decision: " + incomingNodeId + " fits as NEW PREVIOUS for " + currentId +
+                    " (between " + prevId + " and " + currentId + ")");
+            // My old previousNode (prevId) needs to update its next pointer to incomingNode
+            setOtherNextNode(previousNode.getIP(), incomingNode, name); // Tell old prev about incoming
+
+            // incomingNode's new previous is my old previousNode
+            setOtherPreviousNode(incomingNode.getIP(), previousNode, name);
+            // incomingNode's new next is me (currentNode)
+            setOtherNextNode(incomingNode.getIP(), currentNode, name);
+
+            // My new previousNode is incomingNode
+            setPreviousNode(incomingNode);
+
+            replicationService.start();
+            logFinalState(name, incomingNodeId);
+            return;
+        }
+
+        // If neither of the above, incomingNode is not an immediate neighbor for this currentNode.
+        // Another node in the ring will handle it.
+        System.out.println("  Decision: " + incomingNodeId + " is not an immediate neighbor for " + currentId + ". No local pointer changes for this incoming node.");
+        logFinalState(name, incomingNodeId); // Log state even if no change
+    }
+    private void logFinalState(String processedNodeName, int processedNodeId) {
+        System.out.println("Node " + currentNode.getID() + ": Finished processing multicast from " + processedNodeName + "(" + processedNodeId + ")");
+        System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+        System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+    }
+
+
+    public ResponseEntity<String> setOtherBiggest(String ip){
+
+        String mapping = "/node/biggest";
+        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    uri, HttpMethod.POST, null, String.class);
+
+            System.out.println("setOtherBiggest : " +response.getBody());  //we need to check for error ig
+
+            return  response;                                  //check
+        } catch (Exception e) {
+            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
     }
 
@@ -269,7 +280,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherNextID for node" + name + " on ip " + ip);
+        System.out.println("setOtherNextID to" + node.getID() + " on ip " + ip);
         System.out.println("Call to " + uri);
 
         try {
@@ -296,7 +307,7 @@ public class NodeService {
         headers.setContentType(MediaType.APPLICATION_JSON); // Indicate that we are sending JSON
         HttpEntity<Node> requestEntity = new HttpEntity<>(node, headers);
 
-        System.out.println("setOtherPreviousID for node" + name + " on ip " + ip);
+        System.out.println("setOtherPreviousID to " + node.getID() + " on ip " + ip);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
@@ -346,7 +357,6 @@ public class NodeService {
     public void pingNextAndPreviousNode() {
         if (running) {
             System.out.println("Pinging previous and next nodes...");
-
             pingNode(previousNode, "previous");
             pingNode(nextNode, "next");
         }
@@ -403,12 +413,21 @@ public class NodeService {
                 else if (failedNode == previousNode){
                     //if failed node is previous -> its previous becomes our previous <-> we become the next of its previous
 
-                    //we only need the previous node of the failed node (next is this node)
-                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+
+                    System.out.println("The FAILED node is my previous node  ");
+                    System.out.println("Node " + currentNode.getID() );
+                    System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+                    System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+
+
+
+                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
-                    setPreviousNode(failedPreviousNode);
+                    System.out.println("FailedPrevNode : " + failedPreviousNode);
+
                     setOtherNextNode(failedPreviousNode.getIP() , currentNode , failedPreviousNode.getIP());
+                    setPreviousNode(failedPreviousNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
@@ -418,16 +437,25 @@ public class NodeService {
                 }else if (failedNode == nextNode){
                     //if failed node is next -> its next becomes our next <-> we become the previous of its next
 
+                    System.out.println("The FAILED node is my Next node  ");
+                    System.out.println("Node " + currentNode.getID() );
+                    System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+                    System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+
                     //we only need the next node of failed node (previous is this node)
-                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
+                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
 
-                    setNextNode(failedNextNode);
+                    System.out.println("FailedNExtNode : " + failedNextNode);
+
+
                     setOtherPreviousNode(failedNextNode.getIP() , currentNode , failedNextNode.getIP());
+                    setNextNode(failedNextNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
                     forwardAgent(failureAgent , nextNode);
+
 
                 }
 
@@ -528,6 +556,10 @@ public class NodeService {
 
     public Node getCurrentNode() {
         return currentNode;
+    }
+
+    public void setBiggest(boolean biggest) {
+        this.biggest = biggest;
     }
 
     public boolean isRunning() {

@@ -31,7 +31,7 @@ public class SyncAgent implements Runnable {
 
     private  NodeService nodeService;
 
-    private long syncIntervalMillis = 30000; // e.g., 30 seconds
+    private long syncIntervalMillis = 20000; // e.g., 30 seconds
 
     // Constructor used when creating the agent locally
     public SyncAgent() {
@@ -111,7 +111,6 @@ public class SyncAgent implements Runnable {
         String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/sync/receive-filelist";
         logger.fine("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
 
-        RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON); // Or another suitable format
 

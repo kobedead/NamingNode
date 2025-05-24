@@ -29,7 +29,7 @@ public class FailureAgent implements Runnable, Serializable {
     private transient Node nextNode;    //next node to visit
     private transient ReplicationService replicationService;
     private transient GlobalMap globalMap;
-    private transient String filesDir = FILES_DIR; // e.g. NNConf.FILES_DIR
+    private transient String filesDir ; // e.g. NNConf.FILES_DIR
 
     public FailureAgent(Node failingNode, Node newOwnerNode, Node originatorNode) {
         this.failingNode = failingNode;
@@ -37,10 +37,11 @@ public class FailureAgent implements Runnable, Serializable {
         this.originatorNode = originatorNode;
     }
 
-    public void initialize(Node currentNode, Node nextNode, ReplicationService replicationService) {
+    public void initialize(Node currentNode, Node nextNode, ReplicationService replicationService , String filesDir) {
         this.currentNode = currentNode;
         this.nextNode = nextNode;
         this.replicationService = replicationService;
+        this.filesDir = filesDir;
         this.globalMap = GlobalMap.getInstance();       //check if this works if it is transmitted to next node?
     }
 
@@ -77,6 +78,7 @@ public class FailureAgent implements Runnable, Serializable {
             //go over all local files of this node
             for (File localFile : localFiles) {
                 if (localFile.isFile()) {
+                    logger.info(" FailureAgent: Found a file on current node");
                     String filename = localFile.getName();
                     //check if the FileInfo of this file is present -> should be
                     if (globalMap.containsKey(filename)){
@@ -102,7 +104,9 @@ public class FailureAgent implements Runnable, Serializable {
                         }
                     }
 
-                }
+                }else
+                    logger.info(" FailureAgent: Found a NON-file in the dir");
+
             }
 
             logger.fine("FailureAgent: Scanned the full directory and normally send all the files");

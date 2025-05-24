@@ -64,6 +64,17 @@ public class NodeController {
         return replicationService.putFile(file , ipOfRef );
     }
 
+    @PostMapping("/biggest")
+    public ResponseEntity<String> ImTheBiggestNode()  {
+        nodeService.setBiggest(true);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body("Biggest set");
+    }
+
+
+
+
+
 
     /**
      * This mapping will take a file and store on this node as new owner of file
@@ -109,11 +120,11 @@ public class NodeController {
         return ResponseEntity.ok("Received numberOfNodes: " + numberOfNodes);
     }
 
-    @CrossOrigin(origins = "*")
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("alive");
     }
+
 
     @DeleteMapping("/shutdown")
     public ResponseEntity<String> shutdown(){
@@ -126,7 +137,6 @@ public class NodeController {
         nodeService.startProcessing();
         return ResponseEntity.ok("Node started successfully!");
     }
-
 
     @PutMapping("/reference/localGone")
     public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO){

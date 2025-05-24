@@ -1,6 +1,5 @@
 package ds.namingnote.Agents;
 
-import ds.namingnote.Utilities.Node;
 
 import java.io.Serializable;
 import java.util.*;
@@ -9,8 +8,6 @@ public class FileInfo implements Serializable {
     private static final long serialVersionUID = 1L; // Good practice for Serializable
 
     private String filename;
-
-
 
     //for these to become node object i need to send node as refrence in the replicationService!
     private String owner = null ;
@@ -49,9 +46,15 @@ public class FileInfo implements Serializable {
     public String getFilename() { return filename; }
     public void setFilename(String filename) { this.filename = filename; }
     public boolean isLocked() { return isLocked; }
-    public void setLocked(boolean locked) { isLocked = locked; }
+    public void setLocked(boolean locked) {
+        isLocked = locked;
+        this.updateVersion();
+    }
     public String getLockedByNodeIp() { return lockedByNodeId; }
-    public void setLockedByNodeIp(String lockedByNodeId) { this.lockedByNodeId = lockedByNodeId; }
+    public void setLockedByNodeIp(String lockedByNodeId) {
+        this.lockedByNodeId = lockedByNodeId;
+        this.updateVersion();
+    }
     public long getVersion() { return version; }
     public void setVersion(long version) { this.version = version; }
 
@@ -66,6 +69,7 @@ public class FileInfo implements Serializable {
 
     public void setOwner(String owner) {
         this.owner = owner;
+        this.updateVersion();
     }
 
     public Set<String> getReplicationLocations() {
@@ -74,14 +78,17 @@ public class FileInfo implements Serializable {
 
     public void setReplicationLocations(Set<String> replicationLocations) {
         this.replicationLocations = replicationLocations;
+        this.updateVersion();
     }
 
     public void removeReplicationLocation(String ipOfRepLoc){
         this.replicationLocations.remove(ipOfRepLoc);
+        this.updateVersion();
     }
 
     public void mergeRepLocations(FileInfo otherFileInfo){
         this.replicationLocations.addAll(otherFileInfo.getReplicationLocations());
+        this.updateVersion();
     }
 
     public boolean containsAsReference(String ipOfReference){

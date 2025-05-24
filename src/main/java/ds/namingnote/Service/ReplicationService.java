@@ -274,8 +274,7 @@ public class ReplicationService {
 
         //if the referenceIp is the ip of this node -> this node should become the new owner of the file
         if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
-            //check if this node already has replicated the file
-            //update the FileInfo in global map !!!
+            globalMap.setOwner(file.getName() , ipOfRefrence);
         }
 
 

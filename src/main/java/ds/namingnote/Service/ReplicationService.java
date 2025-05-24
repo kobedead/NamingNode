@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,11 +99,10 @@ public class ReplicationService {
         if (fileInfo != null){
             ipOfOwner = fileInfo.getOwner();
             //check if always owner????
-        }else
+        }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
-
-
-
+            globalMap.setOwner(file.getName(), ipOfOwner);
+        }
 
         String mapping = "/namingserver/node/by-filename-owner?filename=" + file.getName() + "&ownerIp=" + ipOfOwner;
         String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
@@ -122,13 +122,13 @@ public class ReplicationService {
             //if ip it needs to be sent to is not this node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
 
-                if(fileInfo != null){
-                    if(fileInfo.containsAsReference(ipOfNode)){
+                if (fileInfo != null) {
+                    if (fileInfo.containsAsReference(ipOfNode)) {
                         //if this is the case the node where we want to send the file already has the file
                         //-> we can skip this
                         return;
                     }
-                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
+                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
                         //i already have the file -> we can skip
                         //-> FileChecker probably called this method
                         return;
@@ -138,26 +138,27 @@ public class ReplicationService {
 
                 //here we only get if the file is owned by us and not send to node yet
 
-                System.out.println("The file : "+ file.getName() + " Needs to be send to : " + ipOfNode);
+                System.out.println("The file : " + file.getName() + " Needs to be send to : " + ipOfNode);
 
                 //should do check or execution if file transfer not completed!!!!
-                ResponseEntity<String> check = sendFile(ipOfNode , file , null);
+                ResponseEntity<String> check = sendFile(ipOfNode, file, null);
                 System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
                 //save ip to filename (reference)
-                globalMap.putReplicationReference(file.getName() , ipOfNode);
+                globalMap.putReplicationReference(file.getName(), ipOfNode);
                 //whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
 
-            }
-            else
+            } else {
+                //shouldnt be possible anymore
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
-                if (!globalMap.containsKey(file.getName())){
+                if (!globalMap.containsKey(file.getName())) {
                     System.out.println("Set this node as owner of the file in GlobalMap");
-                    globalMap.setOwner(file.getName() ,nodeService.getCurrentNode().getIP());
+                    globalMap.setOwner(file.getName(), nodeService.getCurrentNode().getIP());
                 }
-        } catch (Exception e) {
-            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
         }
     }
 

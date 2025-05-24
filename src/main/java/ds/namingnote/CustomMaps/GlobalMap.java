@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static ds.namingnote.Config.NNConf.GLOBAL_MAP_PATH;
-@Component
+
 public class GlobalMap {
 
     // Singleton instance variable, volatile to ensure visibility across threads
@@ -36,7 +36,6 @@ public class GlobalMap {
     // The internal map, using ConcurrentHashMap for thread-safe in-memory operations
     private final ConcurrentHashMap<String, FileInfo> internalMap;
 
-    @Autowired
     private SyncAgent syncAgent ;
 
 
@@ -49,6 +48,11 @@ public class GlobalMap {
         // Load initial data from JSON into a temporary HashMap, then populate ConcurrentHashMap
         Map<String, FileInfo> loadedData = loadJSON();
         this.internalMap = new ConcurrentHashMap<>(loadedData);
+    }
+
+
+    public void setSyncAgent(SyncAgent syncAgent) {
+        this.syncAgent = syncAgent; //can be dangereus ig
     }
 
     /**

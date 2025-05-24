@@ -65,6 +65,7 @@ public class ReplicationService {
             fileCheckerThread.start();
 
             syncAgent.initialize(nodeService);
+            globalMap.setSyncAgent(syncAgent);
             syncAgentThread = new Thread(syncAgent);
             syncAgentThread.start();
         }

@@ -83,6 +83,7 @@ public class FileChecker implements Runnable{
                     } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
 
                         LOGGER.log(Level.INFO, "File modified: " + fileName);
+                        replicationService.fileAdded(fullFileName.toFile());
 
                         // Add specific handling for file modification
                     }

@@ -99,7 +99,7 @@ public class ReplicationService {
             ipOfOwner = fileInfo.getOwner();
             //check if always owner????
         }else
-            ipOfOwner = nodeService.currentNode.getIP();
+            ipOfOwner = nodeService.getCurrentNode().getIP();
 
 
 

@@ -64,7 +64,7 @@ public class AgentController {
         }else
             return syncAgent.forwardMap(receivedMap ,ipoforigin);
     }
-    
+
     /**
      * Endpoint to request a lock on a file.
      * The node receiving this request should be the OWNER of the file.

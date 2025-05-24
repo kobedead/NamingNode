@@ -46,6 +46,7 @@ public class NodeController {
      */
     @PostMapping("/file")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file , HttpServletRequest request)  {
+        System.out.println("File Upload requested from ip : " + request.getRemoteAddr());
         return replicationService.putFile(file , request.getRemoteAddr());
     }
 
@@ -61,6 +62,7 @@ public class NodeController {
      */
     @PostMapping("/file/{ipOfRef}")
     public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
+        System.out.println("File upload requested with refrence ip : " + ipOfRef);
         return replicationService.putFile(file , ipOfRef );
     }
 

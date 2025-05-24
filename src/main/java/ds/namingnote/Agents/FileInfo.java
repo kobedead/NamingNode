@@ -40,7 +40,7 @@ public class FileInfo implements Serializable {
         this.lockedByNodeId = null; // Or some other indicator for not locked
         this.version = System.currentTimeMillis(); // Initial version
 
-        fileHash = Utilities.mapHash(filename);
+        this.fileHash = Utilities.mapHash(filename);
     }
 
 
@@ -129,6 +129,7 @@ public class FileInfo implements Serializable {
                 ", isLocked=" + isLocked +
                 ", lockedByNodeId=" + lockedByNodeId +
                 ", version=" + version +
+                ", fileHash=" + fileHash +
                 '}';
     }
 }

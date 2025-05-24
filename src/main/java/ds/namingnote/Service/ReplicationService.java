@@ -55,9 +55,19 @@ public class ReplicationService {
      * Method start
      * Will go over all files in FILES_DIR and checks through fileAdded
      *
-     *
      */
     public void start(){
+
+        if (fileCheckerThread == null) {
+            System.out.println("Creating new file checker and starting thread");
+
+            fileCheckerThread = new Thread(new FileChecker(this));
+            fileCheckerThread.start();
+
+            syncAgent.initialize(nodeService);
+            syncAgentThread = new Thread(syncAgent);
+            syncAgentThread.start();
+        }
 
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
@@ -67,21 +77,7 @@ public class ReplicationService {
                 fileAdded(child);
             }
             System.out.println("All Files are checked and replicated if needed");
-            //here all the files should be checked, so a thread can be started to check for updated in the file DIR
-            if (fileCheckerThread == null) {
-                System.out.println("Creating new file checker and starting thread");
-
-                fileCheckerThread = new Thread(new FileChecker(this));
-                fileCheckerThread.start();
-
-
-                syncAgent.initialize(nodeService);
-                syncAgentThread = new Thread(syncAgent);
-                syncAgentThread.start();
-
-
-            }
-
+            //here all the files should be checked
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
@@ -387,48 +383,10 @@ public class ReplicationService {
         }
 
         //we first need to make sure that the global file is synced with at least 1 node i think
-        //syncAgent.forceSync; -> CHECK!!!!
+        //Done in the globalMap already
         globalMap.deleteJsonFile();
 
     }
-
-
-    //these aren't actually necessary anymore cause we will sync the map -> maybe for faster propagation this could be usefull tho
-
-/*
-    public ResponseEntity<String> iHaveYourReplicateAndYouDontExistAnymore(String fileName, String ipOfRef) {
-        boolean removed = filesIReplicated.removeValue(fileName, ipOfRef);
-        if (removed) {
-            String message = String.format("Reference %s removed successfully for file: %s " +
-                            "\nIn other words: %s is no longer an available download location for file: %s",
-                    ipOfRef, fileName, ipOfRef, fileName
-            );
-            return ResponseEntity.ok(message);
-        } else {
-            String message = String.format("Failed to remove reference %s for file: %s ",
-                    ipOfRef, fileName
-            );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
-        }
-    }
-
-    public ResponseEntity<String> iHaveLocalFileAndReplicationIsGone(String fileName, String ipOfRef) {
-        boolean removed = whoReplicatedMyFiles.removeValue(fileName, ipOfRef);
-        if (removed) {
-            String message = String.format("Reference %s removed successfully for file: %s " +
-                            "\nIn other words: %s is no longer an available download location for file: %s",
-                    ipOfRef, fileName, ipOfRef, fileName
-            );
-            return ResponseEntity.ok(message);
-        } else {
-            String message = String.format("Failed to remove reference %s for file: %s ",
-                    ipOfRef, fileName
-            );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
-        }
-    }
-
-*/
 
 }
 

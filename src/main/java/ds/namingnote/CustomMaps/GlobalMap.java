@@ -3,7 +3,10 @@ package ds.namingnote.CustomMaps;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ds.namingnote.Agents.FileInfo;
+import ds.namingnote.Agents.SyncAgent;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
@@ -12,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static ds.namingnote.Config.NNConf.GLOBAL_MAP_PATH;
-
+@Component
 public class GlobalMap {
 
     // Singleton instance variable, volatile to ensure visibility across threads
@@ -33,10 +36,15 @@ public class GlobalMap {
     // The internal map, using ConcurrentHashMap for thread-safe in-memory operations
     private final ConcurrentHashMap<String, FileInfo> internalMap;
 
+    @Autowired
+    private SyncAgent syncAgent ;
+
+
     /**
      * Private constructor to enforce the singleton pattern.
      * Loads the initial state from the JSON file into the internal ConcurrentHashMap.
      */
+
     private GlobalMap() {
         // Load initial data from JSON into a temporary HashMap, then populate ConcurrentHashMap
         Map<String, FileInfo> loadedData = loadJSON();
@@ -74,6 +82,7 @@ public class GlobalMap {
         if (currentFileInfo != null) {
             currentFileInfo.removeReplicationLocation(ipOfRef);
             saveJSON();
+            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
         }
         // If FileInfo doesn't exist for the filename, there's nothing to remove.
     }
@@ -85,19 +94,13 @@ public class GlobalMap {
         if (currentFileInfo != null) {
             currentFileInfo.setOwner(newOwner);
             saveJSON(); // Persist the change
+            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
         }
         else {
             put(key , new FileInfo(key , newOwner , null));
         }
 
     }
-
-
-
-
-
-
-
 
 
     // --- Map-like operations, delegating to internalMap and persisting changes ---
@@ -138,6 +141,7 @@ public class GlobalMap {
         }
 
         saveJSON(); // Persist changes to the JSON file after the map operation
+        syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
         return oldValue;
     }
 
@@ -162,6 +166,7 @@ public class GlobalMap {
         // Only save to JSON if an entry was actually removed
         if (removedValue != null) {
             saveJSON();
+            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
         }
         return removedValue;
     }

@@ -100,11 +100,9 @@ public class SyncAgent implements Runnable {
         //first we merge the map we got with our own map
         globalMap.mergeFileLists(receivedMap);
 
-
-        Node currentNode = nodeService.getCurrentNode();
         Node nextNode = nodeService.getNextNode();
 
-        if (currentNode == null || nextNode == null || nextNode.getID() == currentNode.getID()) {
+        if (attachedNode == null || nextNode == null || nextNode.getID() == attachedNode.getID()) {
             logger.warning("Cannot forward file list. Next node is null or self.");
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Cannot forward: Next node unavailable.");
         }
@@ -133,6 +131,7 @@ public class SyncAgent implements Runnable {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during forwarding: " + e.getMessage());
         }
     }
+
 
     /**
      * This method will get the map of the nextnode and merge with this

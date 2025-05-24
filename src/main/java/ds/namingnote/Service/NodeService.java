@@ -32,7 +32,6 @@ public class NodeService {
     Node nextNode = null;
     Node previousNode = null;
 
-    private boolean biggest;
 
     private boolean namingServerResponse = false;
 
@@ -510,10 +509,6 @@ public class NodeService {
     }
 
 
-
-
-
-
     public Node getPreviousNode () {
         return previousNode;
     }
@@ -537,7 +532,5 @@ public class NodeService {
         return currentNode;
     }
 
-    public void setBiggest(boolean biggest) {
-        this.biggest = biggest;
-    }
+
 }

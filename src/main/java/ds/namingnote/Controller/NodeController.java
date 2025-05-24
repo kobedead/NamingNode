@@ -54,39 +54,15 @@ public class NodeController {
      * reference of where the file came from
      *
      * @param file file to save to node
-     * @param ipOfRef given ip as refrence
+     * @param ipOfRef Given ip as reference
+     *                If this reference is the same as the node that receives this -> this node will be new owner,
+     *                this is part of the failure agent.
      * @return
      */
     @PostMapping("/file/{ipOfRef}")
     public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
         return replicationService.putFile(file , ipOfRef );
     }
-
-    @PostMapping("/biggest")
-    public ResponseEntity<String> ImTheBiggestNode()  {
-        nodeService.setBiggest(true);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body("Biggest set");
-    }
-
-
-
-
-
-
-    /**
-     * This mapping will take a file and store on this node as new owner of file
-     * part of failure agent
-     *
-     * @param file file to save to node
-     * @return
-     */
-    @PostMapping("/file/new-owner")
-    public ResponseEntity<String> uploadFileNewOwner(@RequestParam("file") MultipartFile file)  {
-        return replicationService.putFile(file, "1"  );
-    }
-
-
 
 
     @PostMapping("/id/next")
@@ -126,22 +102,10 @@ public class NodeController {
 
     @DeleteMapping("/shutdown")
     public void shutdown(){
-
         nodeService.shutdown();
-
     }
 
 
-    @PutMapping("/reference/localGone")
-    public void iHaveYourReplicateAndYouDontExistAnymore(@RequestBody ReferenceDTO referenceDTO){
-        //replicationService.iHaveYourReplicateAndYouDontExistAnymore(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
-
-    }
-    @PutMapping("/reference/referenceGone")
-    public void iHaveLocalFileAndReplicationIsGone(@RequestBody ReferenceDTO referenceDTO){
-        //replicationService.iHaveLocalFileAndReplicationIsGone(referenceDTO.getFileName() , referenceDTO.getIpOfRefrence());
-
-    }
 
 
 

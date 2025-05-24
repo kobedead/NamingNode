@@ -107,7 +107,7 @@ public class SyncAgent implements Runnable {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Cannot forward: Next node unavailable.");
         }
 
-        String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/sync/forward-filelist";
+        String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "agent/sync/forward-filelist";
         logger.fine("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
 
         HttpHeaders headers = new HttpHeaders();

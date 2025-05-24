@@ -23,7 +23,8 @@ public class FileInfo implements Serializable {
 
     // Constructors, getters, setters, equals, hashCode
 
-    public FileInfo() {}
+    public FileInfo() {
+    }
 
 
 
@@ -49,18 +50,25 @@ public class FileInfo implements Serializable {
 
     // Getters and Setters for all fields...
     public String getFilename() { return filename; }
-    public void setFilename(String filename) { this.filename = filename; }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+        this.fileHash = Utilities.mapHash(filename);
+    }
     public boolean isLocked() { return isLocked; }
+
     public void setLocked(boolean locked) {
         isLocked = locked;
         this.updateVersion();
     }
     public String getLockedByNodeIp() { return lockedByNodeId; }
+
     public void setLockedByNodeIp(String lockedByNodeId) {
         this.lockedByNodeId = lockedByNodeId;
         this.updateVersion();
     }
     public long getVersion() { return version; }
+
     public void setVersion(long version) { this.version = version; }
 
     public void updateVersion(){

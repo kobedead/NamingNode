@@ -103,7 +103,7 @@ public class ReplicationService {
 
 
 
-        String mapping = "/namingserver/node/by-filename-owner/owner?filename=" + file.getName() + "&ownerIp=" + ipOfOwner;
+        String mapping = "/namingserver/node/by-filename-owner?filename=" + file.getName() + "&ownerIp=" + ipOfOwner;
         String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();

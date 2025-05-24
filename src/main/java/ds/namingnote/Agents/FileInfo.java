@@ -1,6 +1,8 @@
 package ds.namingnote.Agents;
 
 
+import ds.namingnote.Utilities.Utilities;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -17,6 +19,7 @@ public class FileInfo implements Serializable {
     private boolean isLocked;
     private String lockedByNodeId; //  Node IP that holds the lock, 0 or -1 if not locked
     private long version; // For optimistic locking or simple conflict resolution during sync
+    private int fileHash;
 
     // Constructors, getters, setters, equals, hashCode
 
@@ -36,6 +39,8 @@ public class FileInfo implements Serializable {
         this.isLocked = false;
         this.lockedByNodeId = null; // Or some other indicator for not locked
         this.version = System.currentTimeMillis(); // Initial version
+
+        fileHash = Utilities.mapHash(filename);
     }
 
 
@@ -95,6 +100,13 @@ public class FileInfo implements Serializable {
         return this.replicationLocations.contains(ipOfReference);
     }
 
+    public int getFileHash() {
+        return fileHash;
+    }
+
+    public void setFileHash(int fileHash) {
+        this.fileHash = fileHash;
+    }
 
     @Override
     public boolean equals(Object o) {

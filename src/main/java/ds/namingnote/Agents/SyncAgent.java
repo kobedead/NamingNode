@@ -108,7 +108,7 @@ public class SyncAgent implements Runnable {
         }
 
         String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/sync/forward-filelist";
-        logger.fine("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
+        logger.info("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON); // Or another suitable format

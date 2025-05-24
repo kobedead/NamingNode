@@ -101,6 +101,10 @@ public class FailureAgent implements Runnable, Serializable {
                             //we update the owner of the file in the map -> SHOULD BE SYNCED !!!
                             globalMap.setOwner(filename , newOwnerNode.getIP());
                             globalMap.removeReplicationReference(filename ,newOwnerNode.getIP());
+                            if (info.getReplicationLocations().isEmpty()){
+                                //the file has no replication locations anymore -> send to previous of new owner
+                                replicationService.sendFile(newOwnerNode.getIP(),localFile, "1");
+                            }
 
                         }
                     }

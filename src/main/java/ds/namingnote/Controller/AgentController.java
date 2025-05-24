@@ -115,48 +115,8 @@ public class AgentController {
      * 5. Executes the REST method on the next node (unless the agent needs to be terminated)
      */
     @PostMapping("/execute")
-    public ResponseEntity<String> executeFailureAgent(@RequestBody byte[] serializedAgent) throws InterruptedException, IOException {
-        Node currentNode = nodeService.getCurrentNode();
-        if (currentNode == null) {
-            logger.severe("Node not initialized. Cannot execute agent.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Node not initialized");
-        }
-        logger.info("Node " + currentNode.getID() + " received agent for execution.");
-
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(serializedAgent);
-             ObjectInputStream ois = new ObjectInputStream(bis)) {
-
-            FailureAgent failureAgent = (FailureAgent) ois.readObject();
-
-            //maybe add some checks that the object is the failure agent
-
-            // Initialize transient fields
-            failureAgent.initialize(nodeService.getCurrentNode(), nodeService.getNextNode(), replicationService , FILES_DIR);
-
-            Thread agentThread = new Thread(failureAgent);
-            agentThread.setName("MobileAgentThread-" + failureAgent.getClass().getSimpleName() + "-" + currentNode.getID());
-            logger.info("Starting agent thread for: " + failureAgent.getClass().getSimpleName());
-            agentThread.start();
-            agentThread.join(); // Wait for the agent's run() method to complete
-            logger.info("Agent thread finished: " + failureAgent.getClass().getSimpleName());
-
-            // For FailureAgent: forward to next node unless it's back to originator
-            Node nextNode = nodeService.getNextNode();
-            if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
-                logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
-                nodeService.forwardAgent(failureAgent, nextNode);
-            } else {
-                if (nextNode == null || nextNode.getID() == currentNode.getID()) {
-                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");
-                } else if (nextNode.getID() == failureAgent.getOriginatorNode().getID()) {
-                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Next node (" + nextNode.getID() + ") is originator. Agent terminated.");
-                }
-            }
-
-            return ResponseEntity.ok("Agent executed successfully on node " + currentNode.getID());
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<String> executeFailureAgent(@RequestBody byte[] serializedAgent)  {
+        return nodeService.executeFailureAgent(serializedAgent);
     }
 
 

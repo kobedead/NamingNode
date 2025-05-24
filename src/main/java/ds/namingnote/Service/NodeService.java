@@ -3,6 +3,7 @@ package ds.namingnote.Service;
 import ds.namingnote.Agents.FailureAgent;
 import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
+import ds.namingnote.Controller.AgentController;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import ds.namingnote.Utilities.Node;
@@ -14,19 +15,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static ds.namingnote.Config.NNConf.FILES_DIR;
 
 @Service
 public class NodeService {
+
+    private static final Logger logger = Logger.getLogger(AgentController.class.getName());
+
 
     Node currentNode = null;
     Node nextNode = null;
@@ -145,18 +149,16 @@ public class NodeService {
             return;
         }
 
-        // General Case: At least two nodes already in the network (including self).
-        // We need to determine if `incomingNode` fits between `currentNode` and `nextNode`
-        // OR between `previousNode` and `currentNode`.
+        //more than 2 nodes in the network
 
-        // Condition 1: Does incomingNode fit between ME (currentNode) and my NEXT?
-        // (currentNode) --> incomingNode --> (nextNode)
         boolean fitsAsMyNext = false;
-        if (currentId < nextId) { // Standard case: current ID < next ID (e.g., 10 -> 20)
+        //we are not the biggest node
+        if (currentId < nextId) {
             if (incomingNodeId > currentId && incomingNodeId < nextId) {
                 fitsAsMyNext = true;
             }
-        } else { // Wrap-around case: current ID > next ID (e.g., 90 -> 10, current is 'largest')
+            //we are the biggest node in the network
+        } else {
             if (incomingNodeId > currentId || incomingNodeId < nextId) {
                 // incoming is larger than me OR smaller than my next (which is the 'smallest')
                 fitsAsMyNext = true;
@@ -166,14 +168,9 @@ public class NodeService {
         if (fitsAsMyNext) {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW NEXT for " + currentId +
                     " (between " + currentId + " and " + nextId + ")");
-            // My old nextNode (nextId) needs to update its previous pointer to incomingNode
-            setOtherPreviousNode(nextNode.getIP(), incomingNode, name); // Tell old next about incoming
 
-            // incomingNode's new next is my old nextNode
-            setOtherNextNode(incomingNode.getIP(), nextNode, name);
             // incomingNode's new previous is me (currentNode)
             setOtherPreviousNode(incomingNode.getIP(), currentNode, name);
-
             // My new nextNode is incomingNode
             setNextNode(incomingNode);
 
@@ -182,16 +179,17 @@ public class NodeService {
             return;
         }
 
-        // Condition 2: Does incomingNode fit between my PREVIOUS and ME (currentNode)?
-        // (previousNode) --> incomingNode --> (currentNode)
+
         boolean fitsAsMyPrevious = false;
-        if (prevId < currentId) { // Standard case: previous ID < current ID (e.g., 10 -> 20)
+        //this node is not the smallest node in the network
+        if (prevId < currentId) {
             if (incomingNodeId > prevId && incomingNodeId < currentId) {
                 fitsAsMyPrevious = true;
             }
-        } else { // Wrap-around case: previous ID > current ID (e.g., 90 -> 10, current is 'smallest')
+            //current node is the smallest in the network
+        } else {
+            //incoming node is smallest or biggest
             if (incomingNodeId > prevId || incomingNodeId < currentId) {
-                // incoming is larger than my previous (which is 'largest') OR smaller than me
                 fitsAsMyPrevious = true;
             }
         }
@@ -199,14 +197,9 @@ public class NodeService {
         if (fitsAsMyPrevious) {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW PREVIOUS for " + currentId +
                     " (between " + prevId + " and " + currentId + ")");
-            // My old previousNode (prevId) needs to update its next pointer to incomingNode
-            setOtherNextNode(previousNode.getIP(), incomingNode, name); // Tell old prev about incoming
 
-            // incomingNode's new previous is my old previousNode
-            setOtherPreviousNode(incomingNode.getIP(), previousNode, name);
-            // incomingNode's new next is me (currentNode)
+
             setOtherNextNode(incomingNode.getIP(), currentNode, name);
-
             // My new previousNode is incomingNode
             setPreviousNode(incomingNode);
 
@@ -224,29 +217,6 @@ public class NodeService {
         System.out.println("Node " + currentNode.getID() + ": Finished processing multicast from " + processedNodeName + "(" + processedNodeId + ")");
         System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
         System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
-    }
-
-
-    public ResponseEntity<String> setOtherBiggest(String ip){
-
-        String mapping = "/node/biggest";
-        String uri = "http://"+ip+":"+ NNConf.NAMINGNODE_PORT +mapping;
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    uri, HttpMethod.POST, null, String.class);
-
-            System.out.println("setOtherBiggest : " +response.getBody());  //we need to check for error ig
-
-            return  response;                                  //check
-        } catch (Exception e) {
-            System.out.println("Exception in communication between nodes " + e.getMessage() + " -> handleFailure");
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-
     }
 
 
@@ -397,8 +367,8 @@ public class NodeService {
 
                     System.out.println("The FAILED node is my previous node  ");
                     System.out.println("Node " + currentNode.getID() );
-                    System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
-                    System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+                    System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+                    System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
 
 
 
@@ -420,8 +390,8 @@ public class NodeService {
 
                     System.out.println("The FAILED node is my Next node  ");
                     System.out.println("Node " + currentNode.getID() );
-                    System.out.println("  My Final Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
-                    System.out.println("  My Final Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+                    System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+                    System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
 
                     //we only need the next node of failed node (previous is this node)
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
@@ -508,6 +478,51 @@ public class NodeService {
 
     }
 
+    public ResponseEntity executeFailureAgent(byte[] serializedAgent){
+        Node currentNode = getCurrentNode();
+        if (currentNode == null) {
+            logger.severe("Node not initialized. Cannot execute agent.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Node not initialized");
+        }
+        logger.info("Node " + currentNode.getID() + " received agent for execution.");
+
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(serializedAgent);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+
+            FailureAgent failureAgent = (FailureAgent) ois.readObject();
+
+            // Initialize transient fields
+            failureAgent.initialize(getCurrentNode(), getNextNode(), replicationService , FILES_DIR);
+
+            Thread agentThread = new Thread(failureAgent);
+            agentThread.setName("MobileAgentThread-" + failureAgent.getClass().getSimpleName() + "-" + currentNode.getID());
+            logger.info("Starting agent thread for: " + failureAgent.getClass().getSimpleName());
+            agentThread.start();
+            agentThread.join(); // Wait for the agent's run() method to complete
+            logger.info("Agent thread finished: " + failureAgent.getClass().getSimpleName());
+
+            // For FailureAgent: forward to next node unless it's back to originator
+            Node nextNode = getNextNode();
+            if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
+                logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
+                forwardAgent(failureAgent, nextNode);
+            } else {
+                if (nextNode == null || nextNode.getID() == currentNode.getID()) {
+                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");
+                } else if (nextNode.getID() == failureAgent.getOriginatorNode().getID()) {
+                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Next node (" + nextNode.getID() + ") is originator. Agent terminated.");
+                }
+            }
+
+            return ResponseEntity.ok("Agent executed successfully on node " + currentNode.getID());
+        } catch (ClassNotFoundException | InterruptedException e) {
+            throw new RuntimeException(e);
+    } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    
 
     public Node getPreviousNode () {
         return previousNode;

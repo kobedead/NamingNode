@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,13 +57,14 @@ public class AgentController {
     }
 
 
-    @PostMapping("/sync/forward-filelist")
-    public ResponseEntity<String> forwardReceivedFilelist(@RequestBody Map<String, FileInfo> receivedMap) {
-        return syncAgent.forwardMap(receivedMap);
+    @PostMapping("/sync/forward-filelist/{ipoforigin}")
+    public ResponseEntity<String> forwardReceivedFilelist(@PathVariable String ipoforigin , @RequestBody Map<String, FileInfo> receivedMap) {
+        if (Objects.equals(ipoforigin, syncAgent.getAttachedNode().getIP())){
+            return ResponseEntity.status(HttpStatus.CONTINUE).body("The forwarding has reach the end");
+        }else
+            return syncAgent.forwardMap(receivedMap ,ipoforigin);
     }
-
-
-
+    
     /**
      * Endpoint to request a lock on a file.
      * The node receiving this request should be the OWNER of the file.

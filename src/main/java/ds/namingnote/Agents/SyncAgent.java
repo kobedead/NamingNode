@@ -96,9 +96,10 @@ public class SyncAgent implements Runnable {
      * @param receivedMap : the received global map of previous node
      * @return : response to the push
      */
-    public ResponseEntity<String> forwardMap(Map<String, FileInfo> receivedMap) {
+    public ResponseEntity<String> forwardMap(Map<String, FileInfo> receivedMap, String originatingIp) {
         //first we merge the map we got with our own map
         globalMap.mergeFileLists(receivedMap);
+
 
         Node nextNode = nodeService.getNextNode();
 
@@ -107,7 +108,7 @@ public class SyncAgent implements Runnable {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Cannot forward: Next node unavailable.");
         }
 
-        String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/sync/forward-filelist";
+        String url = "http://" + nextNode.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/agent/sync/forward-filelist/+" + originatingIp ;
         logger.info("Forwarding received file list to " + url + ". List size: " + receivedMap.size());
 
         HttpHeaders headers = new HttpHeaders();

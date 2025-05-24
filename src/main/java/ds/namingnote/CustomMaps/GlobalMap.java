@@ -86,7 +86,7 @@ public class GlobalMap {
         if (currentFileInfo != null) {
             currentFileInfo.removeReplicationLocation(ipOfRef);
             saveJSON();
-            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
+            syncAgent.forwardMap(getGlobalMapData() , syncAgent.getAttachedNode().getIP()); // to push changes to other nodes
         }
         // If FileInfo doesn't exist for the filename, there's nothing to remove.
     }
@@ -98,7 +98,7 @@ public class GlobalMap {
         if (currentFileInfo != null) {
             currentFileInfo.setOwner(newOwner);
             saveJSON(); // Persist the change
-            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
+            syncAgent.forwardMap(getGlobalMapData() , syncAgent.getAttachedNode().getIP()); // to push changes to other nodes
         }
         else {
             put(key , new FileInfo(key , newOwner , null));
@@ -145,7 +145,7 @@ public class GlobalMap {
         }
 
         saveJSON(); // Persist changes to the JSON file after the map operation
-        syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
+        syncAgent.forwardMap(getGlobalMapData(), syncAgent.getAttachedNode().getIP()); // to push changes to other nodes
         return oldValue;
     }
 
@@ -170,7 +170,7 @@ public class GlobalMap {
         // Only save to JSON if an entry was actually removed
         if (removedValue != null) {
             saveJSON();
-            syncAgent.forwardMap(getGlobalMapData()); // to push changes to other nodes
+            syncAgent.forwardMap(getGlobalMapData(), syncAgent.getAttachedNode().getIP()); // to push changes to other nodes
         }
         return removedValue;
     }

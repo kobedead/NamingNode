@@ -96,8 +96,18 @@ public class ReplicationService {
      */
     public void fileAdded(File file){
 
+        String ipOfOwner;
+        FileInfo fileInfo = globalMap.get(file.getName());
+        if (fileInfo != null){
+            ipOfOwner = fileInfo.getOwner();
+            //check if always owner????
+        }else
+            ipOfOwner = nodeService.currentNode.getIP();
 
-        String mapping = "/namingserver/node/by-filename/" + file.getName();
+
+
+
+        String mapping = "/namingserver/node/by-filename/owner?fileId=" + file.getName() + "&requesterIp=" + ipOfOwner;
         String uri = "http://"+NAMINGSERVER_HOST+":"+ NNConf.NAMINGSERVER_PORT +mapping;
 
         RestTemplate restTemplate = new RestTemplate();
@@ -115,8 +125,7 @@ public class ReplicationService {
             //if ip it needs to be sent to is not this node
             if (!ipOfNode.equals(localHost.getHostAddress())) {
 
-                if(globalMap.containsKey(file.getName())){
-                    FileInfo fileInfo = globalMap.get(file.getName());
+                if(fileInfo != null){
                     if(fileInfo.containsAsReference(ipOfNode)){
                         //if this is the case the node where we want to send the file already has the file
                         //-> we can skip this

@@ -83,6 +83,7 @@ public class FailureAgent implements Runnable, Serializable {
                     //check if the FileInfo of this file is present -> should be
                     if (globalMap.containsKey(filename)){
                         FileInfo info = globalMap.get(filename);
+                        logger.info(" FailureAgent: Found The file in the GlobalMap, with info :" + info);
                         if (Objects.equals(info.getOwner(), failingNode.getIP())){
                             //here a file in found locally with owner is failed node
                             logger.info(" FailureAgent: Found a file that belongs to the Failed Node");

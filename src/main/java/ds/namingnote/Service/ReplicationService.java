@@ -283,28 +283,41 @@ public class ReplicationService {
         if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
             System.out.println("PutFile called, New Owner is assigned. New Owner  : " + ipOfRefrence);
             globalMap.setOwner(file.getName() , ipOfRefrence);
-        }
+        }else {
 
+            //this is for shutdown purposes
 
-        //this is for shutdown purposes
+            if (globalMap.containsKey(file.getName())) {
+                FileInfo fileInfo = globalMap.get(file.getName());
+                if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
+                    //I already own a replicate of the file nothing
+                    return ResponseEntity.status(HttpStatus.CONTINUE)
+                            .body("I have a replicate already");
+                }
+                if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())) {
+                    //here this node has the file locally -> send (stream) to previous, this is used cause multipartfile is received
+                    final String uri = "http://"+nodeService.getPreviousNode().getIP()+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+nodeService.getCurrentNode().getIP();
 
-        if (globalMap.containsKey(file.getName())){
-            FileInfo fileInfo = globalMap.get(file.getName());
-            if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
-                //I already own a replicate of the file nothing
-                return ResponseEntity.status(HttpStatus.CONTINUE)
-                        .body("I have a replicate already");
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+                    MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+                    try {
+                        body.add("file", new InputStreamResource(file.getInputStream(), file.getOriginalFilename()));
+                        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
+                        RestTemplate restTemplate = new RestTemplate();
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                uri, HttpMethod.POST, entity, String.class);
+                        return response;
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body("Error reading input stream of the file.");
+                    }
+                }
             }
-            if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())){
-                //here this node has the file locally -> send to previous again
-                sendFile(nodeService.getPreviousNode().getIP(), (File) file,  nodeService.getCurrentNode().getIP());
-                return ResponseEntity.status(HttpStatus.CONTINUE)
-                        .body("I have send the file to my previous also");
-
-            }
-
         }
-
 
         ////////////put the file in this nodes local dir
 

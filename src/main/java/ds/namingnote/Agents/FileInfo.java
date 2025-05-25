@@ -1,6 +1,8 @@
 package ds.namingnote.Agents;
 
 
+import ds.namingnote.Utilities.Utilities;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -17,10 +19,12 @@ public class FileInfo implements Serializable {
     private boolean isLocked;
     private String lockedByNodeId; //  Node IP that holds the lock, 0 or -1 if not locked
     private long version; // For optimistic locking or simple conflict resolution during sync
+    private int fileHash;
 
     // Constructors, getters, setters, equals, hashCode
 
-    public FileInfo() {}
+    public FileInfo() {
+    }
 
 
 
@@ -36,6 +40,8 @@ public class FileInfo implements Serializable {
         this.isLocked = false;
         this.lockedByNodeId = null; // Or some other indicator for not locked
         this.version = System.currentTimeMillis(); // Initial version
+
+        this.fileHash = Utilities.mapHash(filename);
     }
 
 
@@ -44,18 +50,25 @@ public class FileInfo implements Serializable {
 
     // Getters and Setters for all fields...
     public String getFilename() { return filename; }
-    public void setFilename(String filename) { this.filename = filename; }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+        this.fileHash = Utilities.mapHash(filename);
+    }
     public boolean isLocked() { return isLocked; }
+
     public void setLocked(boolean locked) {
         isLocked = locked;
         this.updateVersion();
     }
     public String getLockedByNodeIp() { return lockedByNodeId; }
+
     public void setLockedByNodeIp(String lockedByNodeId) {
         this.lockedByNodeId = lockedByNodeId;
         this.updateVersion();
     }
     public long getVersion() { return version; }
+
     public void setVersion(long version) { this.version = version; }
 
     public void updateVersion(){
@@ -95,6 +108,13 @@ public class FileInfo implements Serializable {
         return this.replicationLocations.contains(ipOfReference);
     }
 
+    public int getFileHash() {
+        return fileHash;
+    }
+
+    public void setFileHash(int fileHash) {
+        this.fileHash = fileHash;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -117,6 +137,7 @@ public class FileInfo implements Serializable {
                 ", isLocked=" + isLocked +
                 ", lockedByNodeId=" + lockedByNodeId +
                 ", version=" + version +
+                ", fileHash=" + fileHash +
                 '}';
     }
 }

@@ -64,20 +64,19 @@ public class SyncAgent implements Runnable {
         try {
             //gets run every interval
             while (!Thread.currentThread().isInterrupted()) {
-                System.out.println("SyncAgent run loop iteration for node " + attachedNode.getIP());
+                if (nodeService.isRunning()) {
+                    System.out.println("SyncAgent run loop iteration for node " + attachedNode.getIP());
 
-                //the globalMap is a singleton storage shared with ReplicationService
-                //this means that scanning inside of this agent is unnecessary
-                //ReplicationService + FileChecker will update automatically
+                    //the globalMap is a singleton storage shared with ReplicationService
+                    //this means that scanning inside of this agent is unnecessary
+                    //ReplicationService + FileChecker will update automatically
 
-                // Our only task is to sync these globalMaps
-
-
-                // Synchronize with the next node
-                synchronizeWithNextNode();
+                    // Our only task is to sync these globalMaps
 
 
-
+                    // Synchronize with the next node
+                    synchronizeWithNextNode();
+                }
                 Thread.sleep(syncIntervalMillis);
             }
         } catch (InterruptedException e) {

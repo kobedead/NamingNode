@@ -2,12 +2,12 @@ package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
+import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
 import ds.namingnote.Utilities.Node;
-import ds.namingnote.Utilities.ReferenceDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -103,14 +103,21 @@ public class NodeController {
 
 
     @DeleteMapping("/shutdown")
-    public void shutdown(){
+    public ResponseEntity<String> shutdown(){
         nodeService.shutdown();
+        return ResponseEntity.ok("Node stopped successfully!");
+    }
+
+    @PostMapping("/start")
+    public ResponseEntity<String> start() {
+        nodeService.startProcessing();
+        return ResponseEntity.ok("Node started successfully!");
     }
 
 
-
-
-
-
-
+    @GetMapping(value = "/nextAndPrevious", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
+        NextAndPreviousNodeDTO nextAndPrevious = nodeService.getNextAndPrevious();
+        return ResponseEntity.ok(nextAndPrevious);
+    }
 }

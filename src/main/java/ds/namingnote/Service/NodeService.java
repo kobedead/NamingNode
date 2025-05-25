@@ -1,11 +1,11 @@
 package ds.namingnote.Service;
 
 import ds.namingnote.Agents.FailureAgent;
-import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
 import ds.namingnote.Controller.AgentController;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
+import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 import static ds.namingnote.Config.NNConf.FILES_DIR;
@@ -47,7 +48,24 @@ public class NodeService {
     @Autowired
     private ReplicationService replicationService;
 
+    private final Semaphore startSignal = new Semaphore(0); // initially blocked
+    boolean running = false;
 
+    public void waitForStartSignal() throws InterruptedException {
+        System.out.println("Waiting for start signal...");
+        startSignal.acquire(); // blocks until released
+    }
+
+    public void startProcessing() {
+        if (running) {
+            System.out.println("Node is already running");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already running");
+        }
+
+        running = true;
+        startSignal.release(); // now it's safe to unblock
+        System.out.println("Start signal received for node");
+    }
 
 
     /**
@@ -307,10 +325,11 @@ public class NodeService {
 
     @Scheduled(fixedRate = 30000) // Runs every 30 seconds
     public void pingNextAndPreviousNode() {
-        System.out.println("Pinging previous and next nodes...");
-
-        pingNode(previousNode, "previous");
-        pingNode(nextNode, "next");
+        if (running) {
+            System.out.println("Pinging previous and next nodes...");
+            pingNode(previousNode, "previous");
+            pingNode(nextNode, "next");
+        }
     }
 
     private void pingNode(Node node, String label) {
@@ -429,22 +448,25 @@ public class NodeService {
 
 
 
-    public void shutdown(){
+    public void shutdown() {
+        if (running) {
+            //before remove node out of network -> file transfer
+            replicationService.shutdown();
 
-        //before remove node out of network -> file transfer
-        replicationService.shutdown();
+            //remove node from network
+            setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
+            setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
 
-        //remove node from network
-        setOtherPreviousNode(nextNode.getIP(), nextNode , "Set Other Next");
-        setOtherNextNode(previousNode.getIP(), previousNode , "Set other previous");
+            String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
+            String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
 
-        String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
-        String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
-
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(deleteUri);
-
-        System.exit(0);
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.delete(deleteUri);
+            running = false;
+            System.out.println("Shutdown requested. Going back to waiting state...");
+        } else {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already shut down");
+        }
     }
 
 
@@ -521,7 +543,7 @@ public class NodeService {
             throw new RuntimeException(e);
         }
     }
-    
+
 
     public Node getPreviousNode () {
         return previousNode;
@@ -546,5 +568,17 @@ public class NodeService {
         return currentNode;
     }
 
+    public boolean isRunning() {
+        return running;
+    }
 
+    public NextAndPreviousNodeDTO getNextAndPrevious() {
+        Node next = this.getNextNode();
+        Node previous = this.getPreviousNode();
+        if (next != null && previous != null ) {
+            return new NextAndPreviousNodeDTO(next.getID(), previous.getID());
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Next or previous node is null, is this the only node in the network?");
+        }
+    }
 }

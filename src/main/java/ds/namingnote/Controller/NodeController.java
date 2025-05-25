@@ -30,11 +30,36 @@ public class NodeController {
     }
 
 
+    /**
+     * This endpoint will get a file from the node
+     *
+     * @param filename the name of the file asked
+     * @param request request to get senders ip
+     * @return
+     */
 
     @GetMapping("/file/{filename}")
     public ResponseEntity<Resource> returnFile(@PathVariable String filename, HttpServletRequest request) {
         return replicationService.getFile(filename, request.getRemoteAddr()); // get the file
     }
+
+
+    /**
+     * This endpoint will get a file from the node
+     * Used by naming server to forward a request from somewhere
+     *
+     * @param filename the name of the file asked
+     * @param requesterIP the ip of the machine that requested the file
+     * @return
+     */
+    @GetMapping("/file/with-requesterIP")
+    public ResponseEntity<Resource> returnFileWithRequester(@RequestParam String filename, @RequestParam String requesterIP) {
+        return replicationService.getFile(filename, requesterIP); // get the file
+    }
+
+
+
+
 
     /**
      * This mapping will put a file to local storage and use the sender ip as
@@ -106,6 +131,25 @@ public class NodeController {
     public void shutdown(){
         nodeService.shutdown();
     }
+
+
+
+    /**
+     * Gets filename and sends ip back of node it belongs to
+     *
+     * @param filename file
+     * @param ownerIp ip of owner
+     * @return the file
+     */
+    @GetMapping("/node/by-filename-owner")
+    public ResponseEntity getIpOfNodeFromFileWithOwner(@RequestParam String filename, @RequestParam String ownerIp) {
+        System.out.println("by-filename called with filename: " + filename + "  owner  : " + ownerIp);
+        String IPofNode = nod.getNodeFromFileName(filename , ownerIp);
+        ResponseEntity<String> ip = new ResponseEntity<>(IPofNode , HttpStatus.OK);
+
+        return ip;
+    }
+
 
 
 

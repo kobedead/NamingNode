@@ -521,7 +521,7 @@ public class NodeService {
             throw new RuntimeException(e);
         }
     }
-    
+
 
     public Node getPreviousNode () {
         return previousNode;

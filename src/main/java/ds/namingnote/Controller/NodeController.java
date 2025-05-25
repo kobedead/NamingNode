@@ -30,11 +30,34 @@ public class NodeController {
     }
 
 
-
+    /**
+     * This endpoint will get a file from the node
+     *
+     * @param filename the name of the file asked
+     * @param request request to get senders ip
+     * @return
+     */
     @GetMapping("/file/{filename}")
     public ResponseEntity<Resource> returnFile(@PathVariable String filename, HttpServletRequest request) {
         return replicationService.getFile(filename, request.getRemoteAddr()); // get the file
     }
+
+
+
+    /**
+     * This endpoint will get a file from the node
+     * Used by naming server to forward a request from somewhere
+     *
+     * @param filename the name of the file asked
+     * @param requesterIP the ip of the machine that requested the file
+     * @return
+     */
+    @GetMapping("/file/with-requesterIP")
+    public ResponseEntity<Resource> returnFileWithRequester(@RequestParam String filename, @RequestParam String requesterIP) {
+        return replicationService.getFile(filename, requesterIP); // get the file
+    }
+
+
 
     /**
      * This mapping will put a file to local storage and use the sender ip as
@@ -67,6 +90,12 @@ public class NodeController {
     }
 
 
+    /**
+     * Set the next node of the node this is called on
+     *
+     * @param nextNode : what node should be set as the next node
+     * @return
+     */
     @PostMapping("/id/next")
     public ResponseEntity<String> setNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
@@ -75,6 +104,12 @@ public class NodeController {
 
     }
 
+    /**
+     * Set the next node of the node this is called on
+     *
+     * @param previousNode : what node should be set as the next node
+     * @return
+     */
     @PostMapping("/id/previous")
     public ResponseEntity<String> setPreviousNode(@RequestBody  Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);

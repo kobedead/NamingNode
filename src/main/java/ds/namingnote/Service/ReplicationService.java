@@ -100,6 +100,8 @@ public class ReplicationService {
         }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            //push the change so the node receiving the files knows the owner -> concurrency is needed for proper scaling!
         }
 
         String mapping = "/namingserver/node/by-filename-owner?filename=" + file.getName() + "&ownerIp=" + ipOfOwner;

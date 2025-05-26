@@ -167,4 +167,9 @@ public class NodeController {
     public ResponseEntity<String> uploadFileFrontend(@RequestParam("file") MultipartFile file , HttpServletRequest request)  {
         return replicationService.putFileFrontend(file);
     }
+
+    @GetMapping("/current")
+    public ResponseEntity<String> getCurrentNode() {
+        return ResponseEntity.ok(String.valueOf(nodeService.getCurrentNode().getID()));
+    }
 }

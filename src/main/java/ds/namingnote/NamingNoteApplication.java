@@ -36,8 +36,8 @@ public class NamingNoteApplication {
 
 
                     System.out.println("Service name received: " + serviceName);
-                    nodeService.waitForStartSignal();
                     nodeService.setNameBegin(serviceName);
+                    nodeService.waitForStartSignal();
 
                     System.out.println("Processing complete or shutdown. Waiting again...");
 

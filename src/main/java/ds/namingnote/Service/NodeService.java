@@ -66,14 +66,7 @@ public class NodeService {
         running = true;
         startSignal.release(); // now it's safe to unblock
         System.out.println("Start signal received for node");
-        //create the threads for the multicast
-        if (multicastListenerThread == null)
-            multicastListenerThread = new Thread(new MulticastListener(this));
-        if (multicastSenderThread == null)
-            multicastSenderThread = new Thread(new MulticastSender(name));
 
-        //begin sending messages
-        multicastSenderThread.start();
 
     }
 
@@ -95,6 +88,18 @@ public class NodeService {
         //set current node
         this.currentNode =  currentnode ;
         System.out.println("Current node is set: " + currentnode.getIP());
+
+
+        //create the threads for the multicast
+        if (multicastListenerThread == null)
+            multicastListenerThread = new Thread(new MulticastListener(this));
+        if (multicastSenderThread == null)
+            multicastSenderThread = new Thread(new MulticastSender(name));
+
+        //begin sending messages
+        multicastSenderThread.start();
+
+
     }
 
     /**

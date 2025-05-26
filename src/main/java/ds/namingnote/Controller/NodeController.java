@@ -100,6 +100,7 @@ public class NodeController {
     public ResponseEntity<String> setNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
         nodeService.setNextNode(nextNode);
+        nodeService.checkConnection();
         return ResponseEntity.ok("NextNode updated succesfully");
 
     }
@@ -114,6 +115,7 @@ public class NodeController {
     public ResponseEntity<String> setPreviousNode(@RequestBody  Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);
         nodeService.setPreviousNode(previousNode);
+        nodeService.checkConnection();
         return ResponseEntity.ok("PreviousNode updated succesfully");
 
     }

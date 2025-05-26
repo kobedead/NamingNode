@@ -501,13 +501,11 @@ public class NodeService {
     public void setPreviousNode(Node previousNode) {
         this.previousNode = previousNode;
         System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
-        this.checkConnection();
     }
 
     public void setNextNode(Node nextNode) {
         this.nextNode = nextNode;
         System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
-        this.checkConnection();
     }
 
     public Node getCurrentNode() {

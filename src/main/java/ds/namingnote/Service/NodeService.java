@@ -386,9 +386,12 @@ public class NodeService {
                     Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
                     Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
-                    System.out.println("Previous Node of the FAILED Node : " + failedPreviousNode);
-
                     processIncomingMulticast(failedPreviousNode.getIP() , failedPreviousNode.getID());
+
+                    System.out.println("FailedPrevNode : " + failedPreviousNode);
+
+                    setOtherNextNode(failedPreviousNode.getIP() , currentNode );
+                    setPreviousNode(failedPreviousNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
@@ -399,14 +402,19 @@ public class NodeService {
                     //if failed node is next -> its next becomes our next <-> we become the previous of its next
 
                     System.out.println("The FAILED node is my Next node  ");
+                    System.out.println("Node " + currentNode.getID() );
+                    System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
+                    System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
 
                     //we only need the next node of failed node (previous is this node)
                     Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
                     Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
 
-                    System.out.println("Next Node of the FAILED Node : " + failedNextNode);
+                    System.out.println("FailedNExtNode : " + failedNextNode);
 
-                    processIncomingMulticast(failedNextNode.getIP() , failedNextNode.getID());
+
+                    setOtherPreviousNode(failedNextNode.getIP() , currentNode );
+                    setNextNode(failedNextNode);
 
                     //create the failed agent and forward this
                     FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);

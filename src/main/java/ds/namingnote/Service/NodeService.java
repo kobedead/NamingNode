@@ -473,7 +473,7 @@ public class NodeService {
 
             // For FailureAgent: forward to next node unless it's back to originator
             Node nextNode = getNextNode();
-            if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
+            if (nextNode != null && nextNode.getID() != currentNode.getID() && currentNode.getID() != failureAgent.getOriginatorNode().getID()) {
                 logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
                 forwardAgent(failureAgent, nextNode);
             } else {

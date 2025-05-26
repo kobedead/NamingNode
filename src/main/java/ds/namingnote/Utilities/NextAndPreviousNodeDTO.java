@@ -1,29 +1,27 @@
 package ds.namingnote.Utilities;
 
 public class NextAndPreviousNodeDTO {
-    private int nextID, previousID;
+    private Node nextNode;
+    private Node previousNode;
 
-    public NextAndPreviousNodeDTO() {
+    public NextAndPreviousNodeDTO(Node nextID, Node previousID) {
+        this.nextNode = nextID;
+        this.previousNode = previousID;
     }
 
-    public int getNextID() {
-        return nextID;
+    public Node getNextNode() {
+        return nextNode;
     }
 
-    public int getPreviousID() {
-        return previousID;
+    public void setNextNode(Node nextID) {
+        this.nextNode = nextID;
     }
 
-    public void setNextID(int nextID) {
-        this.nextID = nextID;
+    public Node getPreviousNode() {
+        return previousNode;
     }
 
-    public void setPreviousID(int previousID) {
-        this.previousID = previousID;
-    }
-
-    public NextAndPreviousNodeDTO(int nextID, int previousID) {
-        this.nextID = nextID;
-        this.previousID = previousID;
+    public void setPreviousNode(Node previousID) {
+        this.previousNode = previousID;
     }
 }

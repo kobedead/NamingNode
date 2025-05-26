@@ -2,7 +2,7 @@ package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
-import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
+import ds.namingnote.Utilities.NextAndPreviousIDDTO;
 import ds.namingnote.Utilities.Node;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,8 +151,8 @@ public class NodeController {
 
 
     @GetMapping(value = "/nextAndPrevious", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
-        NextAndPreviousNodeDTO nextAndPrevious = nodeService.getNextAndPrevious();
+    public ResponseEntity<NextAndPreviousIDDTO> getNextAndPrevious() {
+        NextAndPreviousIDDTO nextAndPrevious = nodeService.getNextAndPrevious();
         return ResponseEntity.ok(nextAndPrevious);
     }
 }

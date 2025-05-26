@@ -77,7 +77,7 @@ public class MulticastListener implements Runnable {
 
                     if (name != null && Utilities.mapHash(name) != nodeService.getCurrentNode().getID()){ //otherwise it picks up its own multicast
 
-                        nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , name);
+                        nodeService.processIncomingMulticast(sourceAddress.toString().replace("/", "") , Utilities.mapHash(name));
                     }
                     else
                         System.out.println("Name not found in multicast message or own multicast received");

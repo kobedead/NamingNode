@@ -408,8 +408,9 @@ public class NodeService {
             System.out.println("All files should be Managed ");
             //remove node from network
             System.out.println("Setting neighbours to each other, CurrentPrev : " + getPreviousNode() + " CurrentNext : " + getNextNode());
-            setOtherPreviousNode(getNextNode().getIP(), getNextNode());
-            setOtherNextNode(getPreviousNode().getIP(), getPreviousNode() );
+            setOtherPreviousNode(getNextNode().getIP(), getPreviousNode());
+            setOtherNextNode(getPreviousNode().getIP(), getNextNode() );
+
             setNextNode(null);
             setPreviousNode(null);
 
@@ -514,13 +515,15 @@ public class NodeService {
     }
 
     public void setPreviousNode(Node previousNode) {
-        this.previousNode = previousNode;
         System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
+
+        this.previousNode = previousNode;
     }
 
     public void setNextNode(Node nextNode) {
-        this.nextNode = nextNode;
         System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
+
+        this.nextNode = nextNode;
     }
 
     public Node getCurrentNode() {

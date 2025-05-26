@@ -184,6 +184,7 @@ public class SyncAgent implements Runnable {
             if (!fileInfo.isLocked()) {
                 fileInfo.setLocked(true);
                 fileInfo.setLockedByNodeIp(requesterNodeIp);
+                fileInfo.updateLockVersion();
                 fileInfo.updateVersion(); // Update version to signify change
                 logger.info("SyncAgent: File '" + filename + "' locked by node " + requesterNodeIp + " on owner " + currentNode.getIP());
                 // This change will be propagated in the next sync cycle.
@@ -216,6 +217,7 @@ public class SyncAgent implements Runnable {
             if (fileInfo.isLocked() && Objects.equals(fileInfo.getLockedByNodeIp(), requesterNodeIp)) {
                 fileInfo.setLocked(false);
                 fileInfo.setLockedByNodeIp(null); // Or some indicator of not locked
+                fileInfo.updateLockVersion();
                 fileInfo.updateVersion();
                 logger.info("SyncAgent: File '" + filename + "' unlocked by node " + requesterNodeIp + " on owner " + attachedNode.getIP());
                 // Propagated in next sync cycle

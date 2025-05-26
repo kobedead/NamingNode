@@ -33,7 +33,7 @@ import static ds.namingnote.Config.NNConf.*;
 @Service
 public class ReplicationService {
 
-    private boolean running;
+
     private Thread fileCheckerThread = null;
 
     @Autowired
@@ -58,7 +58,6 @@ public class ReplicationService {
     public void start(){
 
         if (fileCheckerThread == null) {
-            running = true;
             System.out.println("Creating new file checker and starting thread");
             fileCheckerThread = new Thread(new FileChecker(this));
             syncAgent.initialize(nodeService);
@@ -387,7 +386,7 @@ public class ReplicationService {
 
 
         public void shutdown(){
-        running = false;
+
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -418,7 +417,7 @@ public class ReplicationService {
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getCurrentNode().getIP());
         globalMap.deleteJsonFile();
     }
 
@@ -430,13 +429,8 @@ public class ReplicationService {
         fileCheckerThread.join();
     }
 
-    public boolean isRunning() {
-        return running;
-    }
 
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
+
 }
 
 

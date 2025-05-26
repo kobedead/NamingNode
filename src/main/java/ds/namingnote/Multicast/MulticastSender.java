@@ -43,8 +43,6 @@ public class MulticastSender implements Runnable {
                 break; // Exit the loop
             }
         }
-        System.out.println("MulticastSender stopped");
-
     }
 
     public void setRun(Boolean run) {

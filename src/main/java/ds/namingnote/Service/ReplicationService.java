@@ -69,8 +69,12 @@ public class ReplicationService {
         if (!syncAgentThread.isAlive())
             syncAgentThread.start();
 
+        checkFiles();
 
 
+    }
+
+    public void checkFiles(){
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -84,6 +88,7 @@ public class ReplicationService {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
     }
+
 
 
     /**

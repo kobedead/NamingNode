@@ -281,6 +281,8 @@ public class ReplicationService {
         if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
             System.out.println("PutFile called, New Owner is assigned. New Owner  : " + ipOfRefrence);
             globalMap.setOwner(file.getName() , ipOfRefrence);
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            //push the change so the node receiving the files knows the owner -> concurrency is needed for proper scaling!
         }else {
 
             //this is for shutdown purposes

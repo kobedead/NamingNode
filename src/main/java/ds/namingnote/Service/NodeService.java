@@ -187,10 +187,11 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW NEXT for " + currentId +
                     " (between " + currentId + " and " + nextId + ")");
 
+            setNextNode(incomingNode);
             // incomingNode's new previous is me (currentNode)
             setOtherPreviousNode(incomingNode.getIP(), currentNode);
             // My new nextNode is incomingNode
-            setNextNode(incomingNode);
+
 
             replicationService.start();
             logFinalState( incomingNodeId);
@@ -216,10 +217,10 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW PREVIOUS for " + currentId +
                     " (between " + prevId + " and " + currentId + ")");
 
-
+            setPreviousNode(incomingNode);
             setOtherNextNode(incomingNode.getIP(), currentNode);
             // My new previousNode is incomingNode
-            setPreviousNode(incomingNode);
+
 
             replicationService.start();
             logFinalState(incomingNodeId);

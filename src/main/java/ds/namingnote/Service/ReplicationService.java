@@ -381,16 +381,23 @@ public class ReplicationService {
 
         public void shutdown(){
 
+        //so transfer replicated files and references (localRepFiles) to previous node,
+        //so we need to send a file and ip of owner ig
+
+        //so we can use uploadFileGivenIP from the controller
+
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
-            //loop over files and check if replication
+            //loop over files and check if reapplication
             for (File child : directoryListing) {
                 //if name of file in replication files
+                String uri ;
+
                 if (globalMap.containsKey(child.getName())){
                     FileInfo fileInfo = globalMap.get(child.getName());
 
-                    //I replicated the file -> send file to previous node (owner should be synced already on previous node)
+                    //i replicated the file -> send file to previous node (owner should be synced already on previous node)
                     if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
                         sendFile(nodeService.getPreviousNode().getIP(), child, null);
                         globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
@@ -398,11 +405,13 @@ public class ReplicationService {
                     //should not be both possible
                     else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
                             && !fileInfo.getReplicationLocations().isEmpty() ) {
-                        //the file is owned by this node and there are replications -> new owner is previous node
-                        sendFile(nodeService.getPreviousNode().getIP() , child , nodeService.previousNode.getIP());
+                        //the file is owned by this node and there are replications -> new owner chosen??
+                        //for now we will just remove the owner from the FileInfo
+                        globalMap.setOwner(child.getName() , null);     //option 2
                     }
-                    else { //the file is only local to me IG -> can be removed with shutdown
+                    else { //the file is only local to me IG -> can be removed with shutdown i think
                         globalMap.remove(child.getName());
+                        continue;
                     }
                 }
 
@@ -411,8 +420,9 @@ public class ReplicationService {
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-        
-        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getCurrentNode().getIP());
+
+        //we first need to make sure that the global file is synced with at least 1 node i think
+        //Done in the globalMap already
         globalMap.deleteJsonFile();
 
     }

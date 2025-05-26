@@ -346,7 +346,7 @@ public class GlobalMap {
             }
 
             // If remote version is more recent, take over locking information
-            if (remoteFileInfo.getVersion() > localFileInfo.getVersion()) {
+            if (remoteFileInfo.getLockVersion() > localFileInfo.getLockVersion()) {
                 localFileInfo.setLocked(remoteFileInfo.isLocked());
                 localFileInfo.setLockedByNodeIp(remoteFileInfo.getLockedByNodeIp());
             }

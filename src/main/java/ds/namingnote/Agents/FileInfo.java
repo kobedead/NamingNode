@@ -19,6 +19,8 @@ public class FileInfo implements Serializable {
     private boolean isLocked;
     private String lockedByNodeId; //  Node IP that holds the lock, 0 or -1 if not locked
     private long version; // For optimistic locking or simple conflict resolution during sync
+    private long lockVersion;
+
     private int fileHash;
 
     // Constructors, getters, setters, equals, hashCode
@@ -40,7 +42,7 @@ public class FileInfo implements Serializable {
         this.isLocked = false;
         this.lockedByNodeId = null; // Or some other indicator for not locked
         this.version = System.currentTimeMillis(); // Initial version
-
+        this.lockVersion = System.currentTimeMillis();
         this.fileHash = Utilities.mapHash(filename);
     }
 
@@ -59,13 +61,13 @@ public class FileInfo implements Serializable {
 
     public void setLocked(boolean locked) {
         isLocked = locked;
-        this.updateVersion();
+        this.updateLockVersion();
     }
     public String getLockedByNodeIp() { return lockedByNodeId; }
 
     public void setLockedByNodeIp(String lockedByNodeId) {
         this.lockedByNodeId = lockedByNodeId;
-        this.updateVersion();
+        this.updateLockVersion();
     }
     public long getVersion() { return version; }
 
@@ -75,6 +77,9 @@ public class FileInfo implements Serializable {
         version = System.currentTimeMillis();
     }
 
+    public void updateLockVersion(){
+        lockVersion = System.currentTimeMillis();
+    }
 
     public String getOwner() {
         return owner;
@@ -106,6 +111,14 @@ public class FileInfo implements Serializable {
 
     public boolean containsAsReference(String ipOfReference){
         return this.replicationLocations.contains(ipOfReference);
+    }
+
+    public long getLockVersion() {
+        return lockVersion;
+    }
+
+    public void setLockVersion(long lockVersion) {
+        this.lockVersion = lockVersion;
     }
 
     public int getFileHash() {

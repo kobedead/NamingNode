@@ -165,7 +165,7 @@ public class NodeService {
             setOtherNextNode(incomingNode.getIP(), currentNode );
             setOtherPreviousNode(incomingNode.getIP(), currentNode);
 
-            replicationService.checkFiles(); // Or other post-join actions
+            replicationService.start(); // Or other post-join actions
             logFinalState(incomingNodeId);
             return;
         }
@@ -196,7 +196,7 @@ public class NodeService {
             // My new nextNode is incomingNode
 
 
-            replicationService.checkFiles();
+            replicationService.start();
             logFinalState( incomingNodeId);
             return;
         }
@@ -407,8 +407,6 @@ public class NodeService {
             //remove node from network
             setOtherPreviousNode(nextNode.getIP(), nextNode);
             setOtherNextNode(previousNode.getIP(), previousNode );
-            setNextNode(null);
-            setPreviousNode(null);
 
             String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
             String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;

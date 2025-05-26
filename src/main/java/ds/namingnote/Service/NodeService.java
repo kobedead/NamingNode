@@ -7,6 +7,7 @@ import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import ds.namingnote.Utilities.NextAndPreviousIDDTO;
 import ds.namingnote.Utilities.Node;
+import ds.namingnote.Utilities.NodeDTO;
 import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -355,79 +356,53 @@ public class NodeService {
 
         try {
             //get the failed node next and previous nodes from naming server
-            String getUri = baseUri + "/node/nextAndPrevious/" + failedNode.getID();
-            ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
+            String getUri = baseUri + "/node/next/" + failedNode.getID();
+            ResponseEntity<NodeDTO> response = restTemplate.getForEntity(getUri, NodeDTO.class);
+
 
             if (response.getStatusCode() == HttpStatus.OK) {
-                Map<String, String> stringMap = response.getBody();
+                NodeDTO nextOfFailed = response.getBody();
 
-                if (stringMap == null) {
+                if (nextOfFailed == null) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
                 }
 
-                Map<Integer, String> nextAndPrevious = stringMap.entrySet()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                entry -> Integer.parseInt(entry.getKey()), // Convert key to Integer
-                                Map.Entry::getValue
-                        ));
-                System.out.println("Next and Previous for node " + failedNode.getIP() + ": " + nextAndPrevious);
-                //the nextAndPrevious map will always contain this nodes entry as one of the 2
-
-                if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next -> im the only one on the network
-                    //im the only other node on the network then IG
-                    setNextNode(currentNode);
-                    setPreviousNode(currentNode);
-                }
-                else if (failedNode == previousNode){
-                    //if failed node is previous -> its previous becomes our previous <-> we become the next of its previous
-                    System.out.println("The FAILED node is my previous node  ");
-
-                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
-                    Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
-
-                    processIncomingMulticast(failedPreviousNode.getIP() , failedPreviousNode.getID());
-
-                    System.out.println("FailedPrevNode : " + failedPreviousNode);
-
-                    setOtherNextNode(failedPreviousNode.getIP() , currentNode );
-                    setPreviousNode(failedPreviousNode);
-
-                    //create the failed agent and forward this
-                    FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
-                    forwardAgent(failureAgent , nextNode);
+                //next of failed is me
+                if (nextOfFailed.getID() == currentNode.getID()) {
+                    getUri = baseUri + "/node/previous/" + failedNode.getID();
+                    response = restTemplate.getForEntity(getUri, NodeDTO.class);
 
 
-                }else if (failedNode == nextNode){
-                    //if failed node is next -> its next becomes our next <-> we become the previous of its next
+                    if (response.getStatusCode() == HttpStatus.OK) {
+                        NodeDTO previousOfFailed = response.getBody();
 
-                    System.out.println("The FAILED node is my Next node  ");
-                    System.out.println("Node " + currentNode.getID() );
-                    System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
-                    System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
+                        if (previousOfFailed == null) {
+                            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
+                        }
+                        //previous if failed is me -> im the only node on network
+                        if (previousOfFailed.getID() == currentNode.getID()) {
+                            setNextNode(currentNode);
+                            setPreviousNode(currentNode);
+                        } else {
+                            //i need to do operations with previous node of failed -> im the next
+                            setOtherNextNode(previousOfFailed.getIP(), currentNode);
+                            setPreviousNode(new Node(previousOfFailed.getID(), previousOfFailed.getIP()));
+                        }
+                    } else
+                        System.out.println("nextOFfAiled is null");
 
-                    //we only need the next node of failed node (previous is this node)
-                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
-                    Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
-
-                    System.out.println("FailedNExtNode : " + failedNextNode);
-
-
-                    setOtherPreviousNode(failedNextNode.getIP() , currentNode );
-                    setNextNode(failedNextNode);
-
-                    //create the failed agent and forward this
-                    FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
-                    forwardAgent(failureAgent , nextNode);
-
-
+                    //i need to do operations with next of failed node -> im the previous
+                } else {
+                    setOtherPreviousNode(nextOfFailed.getIP(), currentNode);
+                    setNextNode(new Node(nextOfFailed.getID(), nextOfFailed.getIP()));
                 }
 
-            } else {
-                System.out.println("Failed to retrieve next and previous info for node: " + failedNode.getIP());
+
             }
-        } catch (Exception e) {
-            System.err.println("Error fetching next and previous info: " + e.getMessage());
+        } catch (RestClientException e) {
+            throw new RuntimeException(e);
+        } catch (ResponseStatusException e) {
+            throw new RuntimeException(e);
         }
         //if successfully set everything we can delete the failed node from the naming server
         try {

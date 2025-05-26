@@ -364,22 +364,27 @@ public class NodeService {
                 if (nextAndPrev == null) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
                 }
-                Node nextNode = nextAndPrev.getNextNode();
-                Node previousNode = nextAndPrev.getPreviousNode();
+                Node FailednextNode = nextAndPrev.getNextNode();
+                Node FailedpreviousNode = nextAndPrev.getPreviousNode();
 
                 System.out.println("Next and Previous for node " + failedNode.getIP() + ": " + nextAndPrev);
                 //the nextAndPrevious map will always contain this nodes entry as one of the 2
 
-                if (nextNode.getID() == previousNode.getID()) { // Happens if previous == next -> im the only one on the network
+                if (FailednextNode.getID() == FailedpreviousNode.getID()) { // Happens if previous == next -> im the only one on the network
                     //im the only other node on the network then IG
                     setNextNode(currentNode);
                     setPreviousNode(currentNode);
-                } else if (nextNode.getID() == currentNode.getID()) {
-                    processIncomingMulticast(previousNode.getIP(), previousNode.getID());
-                } else if (previousNode.getID() == currentNode.getID()) {
-                    processIncomingMulticast(nextNode.getIP(), nextNode.getID());
+                } else if (FailednextNode.getID() == currentNode.getID()) {
+                    processIncomingMulticast(FailedpreviousNode.getIP(), FailedpreviousNode.getID());
+                } else if (FailedpreviousNode.getID() == currentNode.getID()) {
+                    processIncomingMulticast(FailednextNode.getIP(), FailednextNode.getID());
                 } else
                     logger.severe("Not Expected");
+
+                //create the failed agent and forward this
+                FailureAgent failureAgent = new FailureAgent(failedNode , FailedpreviousNode , currentNode);
+                forwardAgent(failureAgent , nextNode);
+                
             }
         } catch (RestClientException e) {
             throw new RuntimeException(e);

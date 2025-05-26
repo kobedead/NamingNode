@@ -361,6 +361,8 @@ public class NodeService {
                             //i need to do operations with previous node of failed -> im the next
                             setOtherNextNode(previousOfFailed.getIP(), currentNode);
                             setPreviousNode(new Node(previousOfFailed.getID(), previousOfFailed.getIP()));
+                            FailureAgent failureAgent = new FailureAgent(failedNode , previousNode , currentNode);
+                            forwardAgent(failureAgent , nextNode);
                         }
                     } else
                         System.out.println("nextOFfAiled is null");
@@ -369,6 +371,10 @@ public class NodeService {
                 } else {
                     setOtherPreviousNode(nextOfFailed.getIP(), currentNode);
                     setNextNode(new Node(nextOfFailed.getID(), nextOfFailed.getIP()));
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , currentNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
+
                 }
 
 

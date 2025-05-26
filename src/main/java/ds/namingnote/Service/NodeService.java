@@ -66,8 +66,6 @@ public class NodeService {
         running = true;
         startSignal.release(); // now it's safe to unblock
         System.out.println("Start signal received for node");
-
-
     }
 
 
@@ -80,7 +78,6 @@ public class NodeService {
      */
     public void setNameBegin(String name) throws UnknownHostException {
 
-        this.name = name;
         //get own ip
         InetAddress localHost = InetAddress.getLocalHost(); //get own IP
         //create node object for current node
@@ -89,17 +86,12 @@ public class NodeService {
         this.currentNode =  currentnode ;
         System.out.println("Current node is set: " + currentnode.getIP());
 
-
         //create the threads for the multicast
-        if (multicastListenerThread == null)
-            multicastListenerThread = new Thread(new MulticastListener(this));
-        if (multicastSenderThread == null)
-            multicastSenderThread = new Thread(new MulticastSender(name));
+        multicastSenderThread = new Thread(new MulticastSender(name));
+        multicastListenerThread = new Thread(new MulticastListener(this));
 
         //begin sending messages
         multicastSenderThread.start();
-
-
     }
 
     /**

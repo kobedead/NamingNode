@@ -401,20 +401,25 @@ public class NodeService {
 
     public void shutdown() throws InterruptedException {
         if (running) {
+
+            System.out.println("Shutdown called");
             //before remove node out of network -> file transfer
             replicationService.shutdown();
-
+            System.out.println("All files should be Managed ");
             //remove node from network
-            setOtherPreviousNode(nextNode.getIP(), nextNode);
-            setOtherNextNode(previousNode.getIP(), previousNode );
+            System.out.println("Setting neighbours to each other, CurrentPrev : " + getPreviousNode() + " CurrentNext : " + getNextNode());
+            setOtherPreviousNode(getNextNode().getIP(), getNextNode());
+            setOtherNextNode(getPreviousNode().getIP(), getPreviousNode() );
             setNextNode(null);
             setPreviousNode(null);
 
+            System.out.println("Deleting myself from the server map");
             String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
             String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
 
             RestTemplate restTemplate = new RestTemplate();
             restTemplate.delete(deleteUri);
+            System.out.println("Shutting down my threads");
             running = false;
             multicastListenerThread.join();
             multicastSenderThread.join();

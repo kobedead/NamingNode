@@ -34,13 +34,13 @@ public class NamingNoteApplication {
             if (serviceName != null) {
                 System.out.println("Service name: " + serviceName);
 
-
+                while (true) {
                     System.out.println("Service name received: " + serviceName);
                     nodeService.setNameBegin(serviceName);
                     nodeService.waitForStartSignal();
 
                     System.out.println("Processing complete or shutdown. Waiting again...");
-
+                }
             } else {
                 System.out.println("No service name provided. Use --name=YourName");
             }

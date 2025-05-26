@@ -2,7 +2,7 @@ package ds.namingnote.Controller;
 
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
-import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
+import ds.namingnote.Utilities.NextAndPreviousIDDTO;
 import ds.namingnote.Utilities.Node;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +30,34 @@ public class NodeController {
     }
 
 
-
+    /**
+     * This endpoint will get a file from the node
+     *
+     * @param filename the name of the file asked
+     * @param request request to get senders ip
+     * @return
+     */
     @GetMapping("/file/{filename}")
     public ResponseEntity<Resource> returnFile(@PathVariable String filename, HttpServletRequest request) {
         return replicationService.getFile(filename, request.getRemoteAddr()); // get the file
     }
+
+
+
+    /**
+     * This endpoint will get a file from the node
+     * Used by naming server to forward a request from somewhere
+     *
+     * @param filename the name of the file asked
+     * @param requesterIP the ip of the machine that requested the file
+     * @return
+     */
+    @GetMapping("/file/with-requesterIP")
+    public ResponseEntity<Resource> returnFileWithRequester(@RequestParam String filename, @RequestParam String requesterIP) {
+        return replicationService.getFile(filename, requesterIP); // get the file
+    }
+
+
 
     /**
      * This mapping will put a file to local storage and use the sender ip as
@@ -67,6 +90,12 @@ public class NodeController {
     }
 
 
+    /**
+     * Set the next node of the node this is called on
+     *
+     * @param nextNode : what node should be set as the next node
+     * @return
+     */
     @PostMapping("/id/next")
     public ResponseEntity<String> setNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
@@ -75,6 +104,12 @@ public class NodeController {
 
     }
 
+    /**
+     * Set the next node of the node this is called on
+     *
+     * @param previousNode : what node should be set as the next node
+     * @return
+     */
     @PostMapping("/id/previous")
     public ResponseEntity<String> setPreviousNode(@RequestBody  Node previousNode)  {
         logger.info("POST: /id/previous/" + previousNode);
@@ -116,8 +151,8 @@ public class NodeController {
 
 
     @GetMapping(value = "/nextAndPrevious", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<NextAndPreviousNodeDTO> getNextAndPrevious() {
-        NextAndPreviousNodeDTO nextAndPrevious = nodeService.getNextAndPrevious();
+    public ResponseEntity<NextAndPreviousIDDTO> getNextAndPrevious() {
+        NextAndPreviousIDDTO nextAndPrevious = nodeService.getNextAndPrevious();
         return ResponseEntity.ok(nextAndPrevious);
     }
 }

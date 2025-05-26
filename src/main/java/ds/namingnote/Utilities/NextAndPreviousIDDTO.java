@@ -1,9 +1,9 @@
 package ds.namingnote.Utilities;
 
-public class NextAndPreviousNodeDTO {
+public class NextAndPreviousIDDTO {
     private int nextID, previousID;
 
-    public NextAndPreviousNodeDTO() {
+    public NextAndPreviousIDDTO() {
     }
 
     public int getNextID() {
@@ -22,7 +22,7 @@ public class NextAndPreviousNodeDTO {
         this.previousID = previousID;
     }
 
-    public NextAndPreviousNodeDTO(int nextID, int previousID) {
+    public NextAndPreviousIDDTO(int nextID, int previousID) {
         this.nextID = nextID;
         this.previousID = previousID;
     }

@@ -59,17 +59,15 @@ public class ReplicationService {
 
         if (fileCheckerThread == null) {
             System.out.println("Creating new file checker and starting thread");
+
             fileCheckerThread = new Thread(new FileChecker(this));
+            fileCheckerThread.start();
+
             syncAgent.initialize(nodeService);
             globalMap.setSyncAgent(syncAgent);
             syncAgentThread = new Thread(syncAgent);
-        }
-        if (!fileCheckerThread.isAlive())
-            fileCheckerThread.start();
-        if (!syncAgentThread.isAlive())
             syncAgentThread.start();
-
-
+        }
 
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
@@ -413,19 +411,11 @@ public class ReplicationService {
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
+        
         syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getCurrentNode().getIP());
         globalMap.deleteJsonFile();
+
     }
-
-
-    public void joinSyncAgent() throws InterruptedException {
-        syncAgentThread.join();
-    }
-    public void joinFileChecker() throws InterruptedException {
-        fileCheckerThread.join();
-    }
-
-
 
 }
 

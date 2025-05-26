@@ -140,7 +140,7 @@ public class NodeController {
 
 
     @DeleteMapping("/shutdown")
-    public ResponseEntity<String> shutdown() throws InterruptedException {
+    public ResponseEntity<String> shutdown(){
         nodeService.shutdown();
         return ResponseEntity.ok("Node stopped successfully!");
     }

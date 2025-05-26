@@ -399,7 +399,7 @@ public class NodeService {
 
 
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         if (running) {
             //before remove node out of network -> file transfer
             replicationService.shutdown();
@@ -414,11 +414,6 @@ public class NodeService {
             RestTemplate restTemplate = new RestTemplate();
             restTemplate.delete(deleteUri);
             running = false;
-            multicastListenerThread.join();
-            multicastSenderThread.join();
-            replicationService.joinSyncAgent();
-            replicationService.joinFileChecker();
-
             System.out.println("Shutdown requested. Going back to waiting state...");
         } else {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already shut down");

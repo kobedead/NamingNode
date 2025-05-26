@@ -351,12 +351,33 @@ public class ReplicationService {
         }
     }
 
+    public ResponseEntity<String> putFileFrontend(MultipartFile file) {
+        try {
+
+            // Define the directory where files should be saved
+            File directory = new File(FILES_DIR);
+
+            // Create the directory if it does not exist
+            if (!directory.exists()) {
+                directory.mkdirs();  // Creates the directory and parent directories if needed
+            }
+
+            // Save the file on disc
+            String fileName = file.getOriginalFilename();
+            File destFile = new File(FILES_DIR, fileName);
+            System.out.println("File saved to: " + destFile.getAbsolutePath());
+            file.transferTo(destFile.toPath());
 
 
+            return ResponseEntity.ok("File uploaded successfully: " + fileName);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload the file");
+        }
+    }
 
 
-
-    public void shutdown(){
+        public void shutdown(){
 
         //so transfer replicated files and references (localRepFiles) to previous node,
         //so we need to send a file and ip of owner ig

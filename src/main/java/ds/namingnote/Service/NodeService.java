@@ -422,6 +422,8 @@ public class NodeService {
             restTemplate.delete(deleteUri);
             System.out.println("Shutting down my threads");
             running = false;
+            System.out.println("Shutting down my threads");
+
             multicastListenerThread.join();
             multicastSenderThread.join();
             replicationService.joinSyncAgent();

@@ -90,6 +90,8 @@ public class MulticastListener implements Runnable {
 
         }
 
+        System.out.println("MulticastSender stopped");
+
     }
 
 

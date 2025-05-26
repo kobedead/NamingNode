@@ -346,8 +346,6 @@ public class GlobalMap {
             }
 
             // If remote version is more recent, take over locking information
-            System.out.println("Merging Maps, For the locks Remote Version : " + remoteFileInfo.getLockVersion() + "    LocalVersion : " + localFileInfo.getLockVersion());
-            
             if (remoteFileInfo.getLockVersion() > localFileInfo.getLockVersion()) {
                 localFileInfo.setLocked(remoteFileInfo.isLocked());
                 localFileInfo.setLockedByNodeIp(remoteFileInfo.getLockedByNodeIp());

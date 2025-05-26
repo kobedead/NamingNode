@@ -62,6 +62,8 @@ public class FileInfo implements Serializable {
     public void setLocked(boolean locked) {
         isLocked = locked;
         this.updateLockVersion();
+        System.out.println("        LOCKED VERSION UPDATED : " + lockVersion );
+
     }
     public String getLockedByNodeIp() { return lockedByNodeId; }
 

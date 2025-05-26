@@ -324,33 +324,6 @@ public class NodeService {
     }
 
 
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void pingNextAndPreviousNode() {
-        if (running) {
-            System.out.println("Pinging previous and next nodes...");
-            pingNode(previousNode, "previous");
-            pingNode(nextNode, "next");
-        }
-    }
-
-    private void pingNode(Node node, String label) {
-        if (Objects.equals(node, null)) {
-            System.out.println(label + " Node is null, skipping ping.");
-            return;
-        }
-
-        String url = "http://" + node.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
-        RestTemplate restTemplate = new RestTemplate();
-
-        try {
-            String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
-        } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
-            handleFailure(node);
-        }
-    }
-
     public void handleFailure(Node failedNode) {
         String baseUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver";
         RestTemplate restTemplate = new RestTemplate();

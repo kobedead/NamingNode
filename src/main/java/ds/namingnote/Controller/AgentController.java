@@ -59,11 +59,14 @@ public class AgentController {
 
     @PostMapping("/sync/forward-filelist/{ipoforigin}")
     public ResponseEntity<String> forwardReceivedFilelist(@PathVariable String ipoforigin , @RequestBody Map<String, FileInfo> receivedMap) {
-        if (Objects.equals(ipoforigin, syncAgent.getAttachedNode().getIP())){
-            return ResponseEntity.status(HttpStatus.CONTINUE).body("The forwarding has reach the end");
-        }else
-            return syncAgent.forwardMap(receivedMap ,ipoforigin);
-    }
+        String currentNodeIp = syncAgent.getAttachedNode().getIP();
+        if (Objects.equals(ipoforigin, currentNodeIp)) {
+            logger.info("Node " + currentNodeIp + ": Forwarding chain from " + ipoforigin + " has reached ME (originator). Final merge.");
+            syncAgent.mergeGlobalMap(receivedMap); // Assuming this just merges and saves
+            return ResponseEntity.ok("Forwarding chain reached originator. Map merged.");
+        } else {
+            return syncAgent.forwardMap(receivedMap, ipoforigin);
+        }    }
 
     /**
      * Endpoint to request a lock on a file.

@@ -6,6 +6,7 @@ import ds.namingnote.Utilities.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -72,7 +73,7 @@ public class SyncAgent implements Runnable {
                     //ReplicationService + FileChecker will update automatically
 
                     // Our only task is to sync these globalMaps
-
+                    pingNextAndPreviousNode();
 
                     // Synchronize with the next node
                     synchronizeWithNextNode();
@@ -87,6 +88,32 @@ public class SyncAgent implements Runnable {
             e.printStackTrace(); // For more details during development
         }
         logger.info("SyncAgent stopped for node: " + attachedNode.getIP());
+    }
+
+
+    public void pingNextAndPreviousNode() {
+            System.out.println("Pinging previous and next nodes...");
+            pingNode(nodeService.getPreviousNode(), "previous");
+            pingNode(nodeService.getNextNode(), "next");
+
+    }
+
+    private void pingNode(Node node, String label) {
+        if (Objects.equals(node, null)) {
+            System.out.println(label + " Node is null, skipping ping.");
+            return;
+        }
+
+        String url = "http://" + node.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
+        } catch (Exception e) {
+            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
+            nodeService.handleFailure(node);
+        }
     }
 
     /**
@@ -115,21 +142,25 @@ public class SyncAgent implements Runnable {
 
         HttpEntity<Map<String, FileInfo>> requestEntity = new HttpEntity<>(receivedMap, headers);
 
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                logger.fine("File list successfully forwarded to " + nextNode.getIP() + ". Response: " + response.getBody());
-                return ResponseEntity.ok("File list forwarded successfully.");
-            } else {
-                logger.warning("Failed to forward file list to " + nextNode.getIP() + ". Status: " +
-                        response.getStatusCode() + ", Body: " + response.getBody());
-                return ResponseEntity.status(response.getStatusCode()).body("Failed to forward file list.");
+        new Thread(() -> {
+            try {
+                // Create a new RestTemplate instance for this thread or ensure thread-safety if it's shared
+                RestTemplate threadSafeRestTemplate = new RestTemplate();
+                ResponseEntity<String> response = threadSafeRestTemplate.postForEntity(url, requestEntity, String.class);
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    logger.fine("Node " + attachedNode.getIP() + ": ASYNC: Map from origin " + originatingIp + " successfully forwarded to " + nextNode.getIP() + ".");
+                } else {
+                    logger.warning("Node " + attachedNode.getIP() + ": ASYNC: Failed to forward map from origin " + originatingIp + " to " + nextNode.getIP() + ". Status: " +
+                            response.getStatusCode() + ", Body: " + response.getBody());
+                }
+            } catch (Exception e) {
+                logger.severe("Node " + attachedNode.getIP() + ": ASYNC: Exception forwarding map from origin " + originatingIp + " to " + nextNode.getIP() + ": " + e.getMessage());
             }
-        } catch (Exception e) {
-            logger.severe("Error forwarding file list to " + nextNode.getIP() + ": " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during forwarding: " + e.getMessage());
-        }
+        }).start();
+
+        // Return immediately indicating the request was accepted for async processing
+        return ResponseEntity.accepted().body("Map merged locally. Accepted for asynchronous forwarding to next node.");
+
     }
 
 

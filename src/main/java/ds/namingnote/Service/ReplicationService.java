@@ -71,6 +71,7 @@ public class ReplicationService {
 
         checkFiles();
 
+
     }
 
     public void checkFiles(){

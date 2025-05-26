@@ -384,7 +384,7 @@ public class NodeService {
                 //create the failed agent and forward this
                 FailureAgent failureAgent = new FailureAgent(failedNode , FailedpreviousNode , currentNode);
                 forwardAgent(failureAgent , nextNode);
-                
+
             }
         } catch (RestClientException e) {
             throw new RuntimeException(e);

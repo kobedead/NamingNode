@@ -6,7 +6,6 @@ import ds.namingnote.Controller.AgentController;
 import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import ds.namingnote.Utilities.NextAndPreviousIDDTO;
-import ds.namingnote.Utilities.NextAndPreviousNodeDTO;
 import ds.namingnote.Utilities.Node;
 import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 import static ds.namingnote.Config.NNConf.FILES_DIR;
 
@@ -356,40 +356,70 @@ public class NodeService {
         try {
             //get the failed node next and previous nodes from naming server
             String getUri = baseUri + "/node/nextAndPrevious/" + failedNode.getID();
-            ResponseEntity<NextAndPreviousNodeDTO> response = restTemplate.getForEntity(getUri, NextAndPreviousNodeDTO.class);
+            ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
-                NextAndPreviousNodeDTO nextAndPrev = response.getBody();
+                Map<String, String> stringMap = response.getBody();
 
-                if (nextAndPrev == null) {
+                if (stringMap == null) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
                 }
-                Node FailednextNode = nextAndPrev.getNextNode();
-                Node FailedpreviousNode = nextAndPrev.getPreviousNode();
 
-                System.out.println("Next and Previous for node " + failedNode.getIP() + ": " + nextAndPrev);
+                Map<Integer, String> nextAndPrevious = stringMap.entrySet()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                entry -> Integer.parseInt(entry.getKey()), // Convert key to Integer
+                                Map.Entry::getValue
+                        ));
+                System.out.println("Next and Previous for node " + failedNode.getIP() + ": " + nextAndPrevious);
                 //the nextAndPrevious map will always contain this nodes entry as one of the 2
 
-                if (FailednextNode.getID() == FailedpreviousNode.getID()) { // Happens if previous == next -> im the only one on the network
+                if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next -> im the only one on the network
                     //im the only other node on the network then IG
                     setNextNode(currentNode);
                     setPreviousNode(currentNode);
-                } else if (FailednextNode.getID() == currentNode.getID()) {
-                    processIncomingMulticast(FailedpreviousNode.getIP(), FailedpreviousNode.getID());
-                } else if (FailedpreviousNode.getID() == currentNode.getID()) {
-                    processIncomingMulticast(FailednextNode.getIP(), FailednextNode.getID());
-                } else
-                    logger.severe("Not Expected");
+                }
+                else if (failedNode == previousNode){
+                    //if failed node is previous -> its previous becomes our previous <-> we become the next of its previous
+                    System.out.println("The FAILED node is my previous node  ");
 
-                //create the failed agent and forward this
-                FailureAgent failureAgent = new FailureAgent(failedNode , FailedpreviousNode , currentNode);
-                forwardAgent(failureAgent , nextNode);
+                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
+                    Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
 
+                    System.out.println("Previous Node of the FAILED Node : " + failedPreviousNode);
+
+                    processIncomingMulticast(failedPreviousNode.getIP() , failedPreviousNode.getID());
+
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
+
+
+                }else if (failedNode == nextNode){
+                    //if failed node is next -> its next becomes our next <-> we become the previous of its next
+
+                    System.out.println("The FAILED node is my Next node  ");
+
+                    //we only need the next node of failed node (previous is this node)
+                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
+                    Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
+
+                    System.out.println("Next Node of the FAILED Node : " + failedNextNode);
+
+                    processIncomingMulticast(failedNextNode.getIP() , failedNextNode.getID());
+
+                    //create the failed agent and forward this
+                    FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
+                    forwardAgent(failureAgent , nextNode);
+
+
+                }
+
+            } else {
+                System.out.println("Failed to retrieve next and previous info for node: " + failedNode.getIP());
             }
-        } catch (RestClientException e) {
-            throw new RuntimeException(e);
-        } catch (ResponseStatusException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            System.err.println("Error fetching next and previous info: " + e.getMessage());
         }
         //if successfully set everything we can delete the failed node from the naming server
         try {
@@ -400,7 +430,6 @@ public class NodeService {
             System.err.println("Error deleting node: " + e.getMessage());
         }
     }
-
 
 
 

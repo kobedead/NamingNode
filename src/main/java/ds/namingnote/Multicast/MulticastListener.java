@@ -48,7 +48,7 @@ public class MulticastListener implements Runnable {
 
         System.out.println("Listening for multicast messages on group: " + NNConf.MULTICAST_GROUP + " and port: " + NNConf.Multicast_PORT);
 
-        while (!Thread.currentThread().isInterrupted()) {
+        while (nodeService.isRunning()) {
 
             try {
                 // Receive the incoming packet

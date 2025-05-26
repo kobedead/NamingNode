@@ -33,7 +33,7 @@ public class NodeService {
 
     private static final Logger logger = Logger.getLogger(AgentController.class.getName());
 
-
+    String name;
     Node currentNode = null;
     Node nextNode = null;
     Node previousNode = null;
@@ -41,8 +41,8 @@ public class NodeService {
 
     private boolean namingServerResponse = false;
 
-    private Thread multicastSenderThread;
-    private Thread multicastListenerThread;
+    private Thread multicastSenderThread = null;
+    private Thread multicastListenerThread = null;
 
     private boolean listenerStarted = false;
 
@@ -66,6 +66,15 @@ public class NodeService {
         running = true;
         startSignal.release(); // now it's safe to unblock
         System.out.println("Start signal received for node");
+        //create the threads for the multicast
+        if (multicastListenerThread == null)
+            multicastListenerThread = new Thread(new MulticastListener(this));
+        if (multicastSenderThread == null)
+            multicastSenderThread = new Thread(new MulticastSender(name));
+
+        //begin sending messages
+        multicastSenderThread.start();
+
     }
 
 
@@ -78,6 +87,7 @@ public class NodeService {
      */
     public void setNameBegin(String name) throws UnknownHostException {
 
+        this.name = name;
         //get own ip
         InetAddress localHost = InetAddress.getLocalHost(); //get own IP
         //create node object for current node
@@ -85,13 +95,6 @@ public class NodeService {
         //set current node
         this.currentNode =  currentnode ;
         System.out.println("Current node is set: " + currentnode.getIP());
-
-        //create the threads for the multicast
-        multicastSenderThread = new Thread(new MulticastSender(name));
-        multicastListenerThread = new Thread(new MulticastListener(this));
-
-        //begin sending messages
-        multicastSenderThread.start();
     }
 
     /**

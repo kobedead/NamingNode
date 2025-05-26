@@ -155,4 +155,16 @@ public class NodeController {
         NextAndPreviousIDDTO nextAndPrevious = nodeService.getNextAndPrevious();
         return ResponseEntity.ok(nextAndPrevious);
     }
+
+    /**
+     * This mapping will put a file to local storage
+     * This endpoint is used by the front-end to upload files to an owner of the file
+     * @param file file to save to node
+     * @param request request to get senders ip
+     * @return
+     */
+    @PostMapping("/file/frontend")
+    public ResponseEntity<String> uploadFileFrontend(@RequestParam("file") MultipartFile file , HttpServletRequest request)  {
+        return replicationService.putFileFrontend(file);
+    }
 }

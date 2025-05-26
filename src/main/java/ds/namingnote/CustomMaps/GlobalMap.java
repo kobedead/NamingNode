@@ -331,7 +331,7 @@ public class GlobalMap {
             FileInfo localFileInfo = internalMap.get(key); // Get the mutable object reference from the map
             FileInfo remoteFileInfo = otherMap.get(key);
 
-            // Always merge replication locations
+            // Always merge replication locations -> need to check for deletions tho !!!
             localFileInfo.mergeRepLocations(remoteFileInfo);
 
             // Logic to update owner based on version and existence
@@ -346,6 +346,8 @@ public class GlobalMap {
             }
 
             // If remote version is more recent, take over locking information
+            System.out.println("Merging Maps, For the locks Remote Version : " + remoteFileInfo.getLockVersion() + "    LocalVersion : " + localFileInfo.getLockVersion());
+            
             if (remoteFileInfo.getLockVersion() > localFileInfo.getLockVersion()) {
                 localFileInfo.setLocked(remoteFileInfo.isLocked());
                 localFileInfo.setLockedByNodeIp(remoteFileInfo.getLockedByNodeIp());

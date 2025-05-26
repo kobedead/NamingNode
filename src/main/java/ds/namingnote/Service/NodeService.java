@@ -7,6 +7,7 @@ import ds.namingnote.Multicast.MulticastListener;
 import ds.namingnote.Multicast.MulticastSender;
 import ds.namingnote.Utilities.NextAndPreviousIDDTO;
 import ds.namingnote.Utilities.Node;
+import ds.namingnote.Utilities.NodeDTO;
 import ds.namingnote.Utilities.Utilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -186,10 +187,11 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW NEXT for " + currentId +
                     " (between " + currentId + " and " + nextId + ")");
 
+            setNextNode(incomingNode);
             // incomingNode's new previous is me (currentNode)
             setOtherPreviousNode(incomingNode.getIP(), currentNode);
             // My new nextNode is incomingNode
-            setNextNode(incomingNode);
+
 
             replicationService.start();
             logFinalState( incomingNodeId);
@@ -215,10 +217,10 @@ public class NodeService {
             System.out.println("  Decision: " + incomingNodeId + " fits as NEW PREVIOUS for " + currentId +
                     " (between " + prevId + " and " + currentId + ")");
 
-
+            setPreviousNode(incomingNode);
             setOtherNextNode(incomingNode.getIP(), currentNode);
             // My new previousNode is incomingNode
-            setPreviousNode(incomingNode);
+
 
             replicationService.start();
             logFinalState(incomingNodeId);
@@ -322,112 +324,65 @@ public class NodeService {
     }
 
 
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void pingNextAndPreviousNode() {
-        if (running) {
-            System.out.println("Pinging previous and next nodes...");
-            pingNode(previousNode, "previous");
-            pingNode(nextNode, "next");
-        }
-    }
-
-    private void pingNode(Node node, String label) {
-        if (Objects.equals(node, null)) {
-            System.out.println(label + " Node is null, skipping ping.");
-            return;
-        }
-
-        String url = "http://" + node.getIP() + ":" + NNConf.NAMINGNODE_PORT + "/node/ping";
-        RestTemplate restTemplate = new RestTemplate();
-
-        try {
-            String response = restTemplate.getForObject(url, String.class);
-            System.out.println("Ping to " + label + " node (" + node.getID() + ") , ip : "+ node.getID() +" successful: " + response);
-        } catch (Exception e) {
-            System.err.println("Failed to ping " + label + " node (" + node.getID() +  ") , ip : "+ node.getID() +" successful: " + e.getMessage());
-            handleFailure(node);
-        }
-    }
-
     public void handleFailure(Node failedNode) {
         String baseUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + "/namingserver";
         RestTemplate restTemplate = new RestTemplate();
 
         try {
             //get the failed node next and previous nodes from naming server
-            String getUri = baseUri + "/node/nextAndPrevious/" + failedNode.getID();
-            ResponseEntity<Map> response = restTemplate.getForEntity(getUri, Map.class);
+            String getUri = baseUri + "/node/next/" + failedNode.getID();
+            ResponseEntity<NodeDTO> response = restTemplate.getForEntity(getUri, NodeDTO.class);
+
 
             if (response.getStatusCode() == HttpStatus.OK) {
-                Map<String, String> stringMap = response.getBody();
+                NodeDTO nextOfFailed = response.getBody();
 
-                if (stringMap == null) {
+                if (nextOfFailed == null) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
                 }
 
-                Map<Integer, String> nextAndPrevious = stringMap.entrySet()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                entry -> Integer.parseInt(entry.getKey()), // Convert key to Integer
-                                Map.Entry::getValue
-                        ));
-                System.out.println("Next and Previous for node " + failedNode.getIP() + ": " + nextAndPrevious);
-                //the nextAndPrevious map will always contain this nodes entry as one of the 2
+                //next of failed is me
+                if (nextOfFailed.getID() == currentNode.getID()) {
+                    getUri = baseUri + "/node/previous/" + failedNode.getID();
+                    response = restTemplate.getForEntity(getUri, NodeDTO.class);
 
-                if (nextAndPrevious.keySet().size() == 1) { // Happens if previous == next -> im the only one on the network
-                    //im the only other node on the network then IG
-                    setNextNode(currentNode);
-                    setPreviousNode(currentNode);
-                }
-                else if (failedNode == previousNode){
-                    //if failed node is previous -> its previous becomes our previous <-> we become the next of its previous
-                    System.out.println("The FAILED node is my previous node  ");
 
-                    Map.Entry<Integer, String> previousEntry = nextAndPrevious.entrySet().stream().min(Map.Entry.comparingByKey()).orElse(null);
-                    Node failedPreviousNode = new Node(previousEntry.getKey() , previousEntry.getValue());
+                    if (response.getStatusCode() == HttpStatus.OK) {
+                        NodeDTO previousOfFailed = response.getBody();
 
-                    processIncomingMulticast(failedPreviousNode.getIP() , failedPreviousNode.getID());
+                        if (previousOfFailed == null) {
+                            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "NextAndPrevious set returned null");
+                        }
+                        //previous if failed is me -> im the only node on network
+                        if (previousOfFailed.getID() == currentNode.getID()) {
+                            setNextNode(currentNode);
+                            setPreviousNode(currentNode);
+                        } else {
+                            //i need to do operations with previous node of failed -> im the next
+                            setOtherNextNode(previousOfFailed.getIP(), currentNode);
+                            setPreviousNode(new Node(previousOfFailed.getID(), previousOfFailed.getIP()));
+                            FailureAgent failureAgent = new FailureAgent(failedNode , previousNode , currentNode);
+                            forwardAgent(failureAgent , nextNode);
+                        }
+                    } else
+                        System.out.println("nextOFfAiled is null");
 
-                    System.out.println("FailedPrevNode : " + failedPreviousNode);
-
-                    setOtherNextNode(failedPreviousNode.getIP() , currentNode );
-                    setPreviousNode(failedPreviousNode);
-
+                    //i need to do operations with next of failed node -> im the previous
+                } else {
+                    setOtherPreviousNode(nextOfFailed.getIP(), currentNode);
+                    setNextNode(new Node(nextOfFailed.getID(), nextOfFailed.getIP()));
                     //create the failed agent and forward this
-                    FailureAgent failureAgent = new FailureAgent(failedNode , failedPreviousNode , currentNode);
+                    FailureAgent failureAgent = new FailureAgent(failedNode , currentNode , currentNode);
                     forwardAgent(failureAgent , nextNode);
-
-
-                }else if (failedNode == nextNode){
-                    //if failed node is next -> its next becomes our next <-> we become the previous of its next
-
-                    System.out.println("The FAILED node is my Next node  ");
-                    System.out.println("Node " + currentNode.getID() );
-                    System.out.println("  My Next: " + (nextNode != null ? nextNode.getID() + " (" + nextNode.getIP() + ")" : "null"));
-                    System.out.println("  My Previous: " + (previousNode != null ? previousNode.getID() + " (" + previousNode.getIP() + ")" : "null"));
-
-                    //we only need the next node of failed node (previous is this node)
-                    Map.Entry<Integer, String> nextEntry = nextAndPrevious.entrySet().stream().max(Map.Entry.comparingByKey()).orElse(null);
-                    Node failedNextNode = new Node(nextEntry.getKey() , nextEntry.getValue());
-
-                    System.out.println("FailedNExtNode : " + failedNextNode);
-
-
-                    setOtherPreviousNode(failedNextNode.getIP() , currentNode );
-                    setNextNode(failedNextNode);
-
-                    //create the failed agent and forward this
-                    FailureAgent failureAgent = new FailureAgent(failedNode , failedNextNode , currentNode);
-                    forwardAgent(failureAgent , nextNode);
-
 
                 }
 
-            } else {
-                System.out.println("Failed to retrieve next and previous info for node: " + failedNode.getIP());
+
             }
-        } catch (Exception e) {
-            System.err.println("Error fetching next and previous info: " + e.getMessage());
+        } catch (RestClientException e) {
+            throw new RuntimeException(e);
+        } catch (ResponseStatusException e) {
+            throw new RuntimeException(e);
         }
         //if successfully set everything we can delete the failed node from the naming server
         try {
@@ -518,14 +473,12 @@ public class NodeService {
 
             // For FailureAgent: forward to next node unless it's back to originator
             Node nextNode = getNextNode();
-            if (nextNode != null && nextNode.getID() != currentNode.getID() && nextNode.getID() != failureAgent.getOriginatorNode().getID()) {
+            if (nextNode != null && nextNode.getID() != currentNode.getID() && currentNode.getID() != failureAgent.getOriginatorNode().getID()) {
                 logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
                 forwardAgent(failureAgent, nextNode);
             } else {
-                if (nextNode == null || failureAgent.getOriginatorNode().getID() == currentNode.getID()) {
-                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");
-                } else if (nextNode.getID() == failureAgent.getOriginatorNode().getID()) {
-                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Next node (" + nextNode.getID() + ") is originator. Agent terminated.");
+                 if (currentNode.getID() == failureAgent.getOriginatorNode().getID()) {
+                    logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Current node (" + currentNode.getID() + ") is originator. Agent terminated.");
                 }
             }
 
@@ -548,13 +501,11 @@ public class NodeService {
     public void setPreviousNode(Node previousNode) {
         this.previousNode = previousNode;
         System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
-        this.checkConnection();
     }
 
     public void setNextNode(Node nextNode) {
         this.nextNode = nextNode;
         System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
-        this.checkConnection();
     }
 
     public Node getCurrentNode() {

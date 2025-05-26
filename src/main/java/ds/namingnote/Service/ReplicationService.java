@@ -3,10 +3,8 @@ package ds.namingnote.Service;
 import ds.namingnote.Agents.FileInfo;
 import ds.namingnote.Agents.SyncAgent;
 import ds.namingnote.Config.NNConf;
-import ds.namingnote.Controller.AgentController;
 import ds.namingnote.CustomMaps.*;
 import ds.namingnote.FileCheck.FileChecker;
-import ds.namingnote.Utilities.ReferenceDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
@@ -102,6 +100,8 @@ public class ReplicationService {
         }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            //push the change so the node receiving the files knows the owner -> concurrency is needed for proper scaling!
         }
 
         String mapping = "/namingserver/node/by-filename-owner?filename=" + file.getName() + "&ownerIp=" + ipOfOwner;
@@ -283,6 +283,8 @@ public class ReplicationService {
         if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
             System.out.println("PutFile called, New Owner is assigned. New Owner  : " + ipOfRefrence);
             globalMap.setOwner(file.getName() , ipOfRefrence);
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            //push the change so the node receiving the files knows the owner -> concurrency is needed for proper scaling!
         }else {
 
             //this is for shutdown purposes

@@ -103,7 +103,6 @@ public class GlobalMap {
         else {
             put(key , new FileInfo(key , newOwner , null));
         }
-
     }
 
 

@@ -522,7 +522,7 @@ public class NodeService {
                 logger.info("Forwarding FailureAgent from " + currentNode.getIP() + " to next node: " + nextNode.getIP());
                 forwardAgent(failureAgent, nextNode);
             } else {
-                if (nextNode == null || nextNode.getID() == currentNode.getID()) {
+                if (nextNode == null || failureAgent.getOriginatorNode().getID() == currentNode.getID()) {
                     logger.info("FailureAgent journey complete on node " + currentNode.getID() + " (no distinct next node). Agent terminated.");
                 } else if (nextNode.getID() == failureAgent.getOriginatorNode().getID()) {
                     logger.info("FailureAgent journey complete on node " + currentNode.getID() + ". Next node (" + nextNode.getID() + ") is originator. Agent terminated.");

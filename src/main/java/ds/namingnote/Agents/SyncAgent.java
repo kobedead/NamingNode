@@ -167,7 +167,7 @@ public class SyncAgent implements Runnable {
     /**
      * This method will get the map of the nextnode and merge with this
      */
-    private void synchronizeWithNextNode() {
+    public void synchronizeWithNextNode() {
         Node nextNode = nodeService.getNextNode();
 
         if (nextNode == null || nextNode.getID() == attachedNode.getID()) {

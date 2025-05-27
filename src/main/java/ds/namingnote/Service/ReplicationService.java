@@ -79,6 +79,7 @@ public class ReplicationService {
     }
 
     public void checkFiles(){
+        syncAgent.synchronizeWithNextNode();
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -159,13 +160,14 @@ public class ReplicationService {
                 globalMap.putReplicationReference(file.getName(), ipOfNode);
 
             } else {
-                //shouldnt be possible anymore
+
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
                 if (!globalMap.containsKey(file.getName())) {
                     System.out.println("Set this node as owner of the file in GlobalMap");
                     globalMap.setOwner(file.getName(), nodeService.getCurrentNode().getIP());
-                }
+                }else
+                    globalMap.putReplicationReference(file.getName(), nodeService.getCurrentNode().getIP());
             }
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -417,7 +419,7 @@ public class ReplicationService {
                         System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
                         globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
-                        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+                        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
 
                     }
 
@@ -426,13 +428,6 @@ public class ReplicationService {
                     }
                 }
 
-                boolean deleted = child.delete();
-                if (deleted) {
-                    System.out.println("File " + child.getName() + " deleted successfully.");
-                } else {
-                    System.err.println("Failed to delete file " + child.getName());
-                    // Optionally handle the failure to delete (e.g., log it)
-                }
             }
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);

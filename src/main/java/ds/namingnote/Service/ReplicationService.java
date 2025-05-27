@@ -103,7 +103,6 @@ public class ReplicationService {
         FileInfo fileInfo = globalMap.get(file.getName());
         if (fileInfo != null){
             ipOfOwner = fileInfo.getOwner();
-            //check if always owner????
         }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);
@@ -397,10 +396,12 @@ public class ReplicationService {
                 if (globalMap.containsKey(child.getName())){
                     FileInfo fileInfo = globalMap.get(child.getName());
 
-                    //I replicated the file -> send file to previous node (owner should be synced already on previous node)
+                    //I replicated the file -> send file to previous node
                     if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
                         sendFile(nodeService.getPreviousNode().getIP(), child, null);
                         globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
+                        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getCurrentNode().getIP());
+
                     }
                     //should not be both possible
                     else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())

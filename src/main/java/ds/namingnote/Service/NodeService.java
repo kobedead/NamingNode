@@ -516,15 +516,17 @@ public class NodeService {
     public void setPreviousNode(Node previousNode) {
         if (previousNode != null)
             System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
-
         this.previousNode = previousNode;
+        this.checkConnection();
+
     }
 
     public void setNextNode(Node nextNode) {
         if (nextNode != null)
             System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
-
         this.nextNode = nextNode;
+        this.checkConnection();
+
     }
 
     public Node getCurrentNode() {

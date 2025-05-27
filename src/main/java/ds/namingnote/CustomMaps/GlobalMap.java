@@ -77,6 +77,7 @@ public class GlobalMap {
     // - operations dedicated to FileInfo 'manipulation'
     public FileInfo putReplicationReference(String filename , String ipOfReference){
         //i want to add a replication Reference to a files FileInfo
+        System.out.println("    AAAAAAA");
         return this.put( filename ,new FileInfo(filename , null , ipOfReference ));
     }
 

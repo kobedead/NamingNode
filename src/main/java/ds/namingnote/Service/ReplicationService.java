@@ -159,7 +159,6 @@ public class ReplicationService {
 
                 //save ip to filename (reference)
                 globalMap.putReplicationReference(file.getName(), ipOfNode);
-                //whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
 
             } else {
                 //shouldnt be possible anymore
@@ -406,7 +405,9 @@ public class ReplicationService {
                     //I replicated the file -> send file to previous node
                     if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
                         System.out.println("I replicated the file -> send file to previous node");
-                        sendFile(nodeService.getPreviousNode().getIP(), child, null);
+                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, null);
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
                         globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
                         //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
 
@@ -418,7 +419,9 @@ public class ReplicationService {
                         //the file is owned by this node and there are replications -> new owner is previous node
                         globalMap.setOwner(child.getName() , nodeService.getPreviousNode().getIP());
                         syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
-                        sendFile(nodeService.getPreviousNode().getIP(), child, nodeService.getPreviousNode().getIP());
+                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, nodeService.getPreviousNode().getIP());
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
                     } else { //the file is only local to me IG -> can be removed with shutdown
                         globalMap.remove(child.getName());
                     }

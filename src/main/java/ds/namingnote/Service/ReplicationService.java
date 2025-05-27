@@ -401,19 +401,9 @@ public class ReplicationService {
                 //if name of file in replication files
                 if (globalMap.containsKey(child.getName())) {
                     FileInfo fileInfo = globalMap.get(child.getName());
-
-                    //I replicated the file -> send file to previous node
-                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
-                        System.out.println("I replicated the file -> send file to previous node");
-                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, null);
-                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
-
-                        globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
-                        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
-
-                    }
+                    
                     //should not be both possible
-                    else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
+                    if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
                             && !fileInfo.getReplicationLocations().isEmpty()) {
                         System.out.println("the file is owned by this node and there are replications -> new owner is previous node\n");
                         //the file is owned by this node and there are replications -> new owner is previous node
@@ -422,7 +412,19 @@ public class ReplicationService {
                         ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, nodeService.getPreviousNode().getIP());
                         System.out.println("Response of node to file transfer : " + check.getStatusCode());
 
-                    } else { //the file is only local to me IG -> can be removed with shutdown
+                    }
+                    //I replicated the file -> send file to previous node
+                    else if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
+                        System.out.println("I replicated the file -> send file to previous node");
+                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, null);
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
+                        globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
+                        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+
+                    }
+
+                    else { //the file is only local to me IG -> can be removed with shutdown
                         globalMap.remove(child.getName());
                     }
                 }

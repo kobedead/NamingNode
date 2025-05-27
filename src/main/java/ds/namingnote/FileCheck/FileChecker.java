@@ -39,11 +39,8 @@ public class FileChecker implements Runnable{
             System.out.println("Watching directory: " + directoryPath);
 
             // Infinite loop to continuously watch for events
-            while (running) {
-                if (Thread.currentThread().isInterrupted()) {
-                    running = false;
-                    break;
-                }
+            while (!Thread.currentThread().isInterrupted() && running) {
+
 
                 WatchKey key;
                 try {
@@ -103,7 +100,7 @@ public class FileChecker implements Runnable{
         catch (IOException e) {
              LOGGER.log(Level.SEVERE, "IOException in file watcher.", e);
         }
-
+        System.out.println("FileChecker stopped");
     }
 }
 

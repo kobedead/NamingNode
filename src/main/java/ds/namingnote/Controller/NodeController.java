@@ -100,6 +100,7 @@ public class NodeController {
     public ResponseEntity<String> setNextNode(@RequestBody Node nextNode)  {
         logger.info("POST: /id/next/" + nextNode);
         nodeService.setNextNode(nextNode);
+
         return ResponseEntity.ok("NextNode updated succesfully");
 
     }
@@ -138,7 +139,7 @@ public class NodeController {
 
 
     @DeleteMapping("/shutdown")
-    public ResponseEntity<String> shutdown(){
+    public ResponseEntity<String> shutdown() throws InterruptedException {
         nodeService.shutdown();
         return ResponseEntity.ok("Node stopped successfully!");
     }

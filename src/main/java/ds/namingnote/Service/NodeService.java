@@ -66,15 +66,6 @@ public class NodeService {
         running = true;
         startSignal.release(); // now it's safe to unblock
         System.out.println("Start signal received for node");
-        //create the threads for the multicast
-        if (multicastListenerThread == null)
-            multicastListenerThread = new Thread(new MulticastListener(this));
-        if (multicastSenderThread == null)
-            multicastSenderThread = new Thread(new MulticastSender(name));
-
-        //begin sending messages
-        multicastSenderThread.start();
-
     }
 
 
@@ -87,7 +78,6 @@ public class NodeService {
      */
     public void setNameBegin(String name) throws UnknownHostException {
 
-        this.name = name;
         //get own ip
         InetAddress localHost = InetAddress.getLocalHost(); //get own IP
         //create node object for current node
@@ -95,6 +85,13 @@ public class NodeService {
         //set current node
         this.currentNode =  currentnode ;
         System.out.println("Current node is set: " + currentnode.getIP());
+
+        //create the threads for the multicast
+        multicastSenderThread = new Thread(new MulticastSender(name));
+        multicastListenerThread = new Thread(new MulticastListener(this));
+
+        //begin sending messages
+        multicastSenderThread.start();
     }
 
     /**
@@ -165,7 +162,7 @@ public class NodeService {
             setOtherNextNode(incomingNode.getIP(), currentNode );
             setOtherPreviousNode(incomingNode.getIP(), currentNode);
 
-            replicationService.start(); // Or other post-join actions
+            replicationService.checkFiles(); // Or other post-join actions
             logFinalState(incomingNodeId);
             return;
         }
@@ -196,7 +193,7 @@ public class NodeService {
             // My new nextNode is incomingNode
 
 
-            replicationService.start();
+            replicationService.checkFiles();
             logFinalState( incomingNodeId);
             return;
         }
@@ -399,21 +396,36 @@ public class NodeService {
 
 
 
-    public void shutdown() {
+    public void shutdown() throws InterruptedException {
         if (running) {
+
+            System.out.println("Shutdown called");
             //before remove node out of network -> file transfer
             replicationService.shutdown();
-
+            System.out.println("All files should be Managed ");
             //remove node from network
-            setOtherPreviousNode(nextNode.getIP(), nextNode);
-            setOtherNextNode(previousNode.getIP(), previousNode );
+            System.out.println("Setting neighbours to each other, CurrentPrev : " + getPreviousNode() + " CurrentNext : " + getNextNode());
+            setOtherPreviousNode(getNextNode().getIP(), getPreviousNode());
+            setOtherNextNode(getPreviousNode().getIP(), getNextNode() );
 
+            setNextNode(null);
+            setPreviousNode(null);
+
+            System.out.println("Deleting myself from the server map");
             String mapping = "/namingserver" + "/node/by-id/" + currentNode.getID();
             String deleteUri = "http://" + NNConf.NAMINGSERVER_HOST + ":" + NNConf.NAMINGSERVER_PORT + mapping ;
 
             RestTemplate restTemplate = new RestTemplate();
             restTemplate.delete(deleteUri);
+            System.out.println("Shutting down my threads");
             running = false;
+            System.out.println("Shutting down my threads");
+
+            multicastListenerThread.interrupt();
+            listenerStarted = false;
+            replicationService.interruptSyncAgent();
+            replicationService.interruptFileChecker();
+
             System.out.println("Shutdown requested. Going back to waiting state...");
         } else {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Node is already shut down");
@@ -502,15 +514,19 @@ public class NodeService {
     }
 
     public void setPreviousNode(Node previousNode) {
+        if (previousNode != null)
+            System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
         this.previousNode = previousNode;
-        System.out.println("Previous ID set to " + previousNode.getID() + " with IP: " + previousNode.getIP());
         this.checkConnection();
+
     }
 
     public void setNextNode(Node nextNode) {
+        if (nextNode != null)
+            System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
         this.nextNode = nextNode;
-        System.out.println("Next ID set to " + nextNode.getID() + " with IP: " + nextNode.getIP());
         this.checkConnection();
+
     }
 
     public Node getCurrentNode() {

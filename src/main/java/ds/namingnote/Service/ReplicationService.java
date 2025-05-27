@@ -33,7 +33,6 @@ import static ds.namingnote.Config.NNConf.*;
 @Service
 public class ReplicationService {
 
-
     private Thread fileCheckerThread = null;
 
     @Autowired
@@ -57,18 +56,29 @@ public class ReplicationService {
      */
     public void start(){
 
-        if (fileCheckerThread == null) {
+        if (fileCheckerThread == null || !fileCheckerThread.isAlive()) {
             System.out.println("Creating new file checker and starting thread");
-
             fileCheckerThread = new Thread(new FileChecker(this));
             fileCheckerThread.start();
-
-            syncAgent.initialize(nodeService);
-            globalMap.setSyncAgent(syncAgent);
-            syncAgentThread = new Thread(syncAgent);
-            syncAgentThread.start();
+        } else {
+            System.out.println("File checker thread is already running.");
         }
 
+        if (syncAgentThread == null || !syncAgentThread.isAlive()) {
+            syncAgent.initialize(nodeService);
+            globalMap.setSyncAgent(syncAgent);
+            System.out.println("Creating new sync agent and starting thread");
+            syncAgentThread = new Thread(syncAgent);
+            syncAgentThread.start();
+        } else {
+            System.out.println("Sync agent thread is already running.");
+        }
+
+        checkFiles();
+
+    }
+
+    public void checkFiles(){
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -84,6 +94,7 @@ public class ReplicationService {
     }
 
 
+
     /**
      * Method fileAdded
      * Will check with naming server if file belongs to itself or if it needs replication
@@ -92,11 +103,11 @@ public class ReplicationService {
      */
     public void fileAdded(File file){
 
+        System.out.println("File added called");
         String ipOfOwner;
         FileInfo fileInfo = globalMap.get(file.getName());
         if (fileInfo != null){
             ipOfOwner = fileInfo.getOwner();
-            //check if always owner????
         }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);
@@ -146,7 +157,6 @@ public class ReplicationService {
 
                 //save ip to filename (reference)
                 globalMap.putReplicationReference(file.getName(), ipOfNode);
-                //whoReplicatedMyFiles.putSingle(file.getName() , ipOfNode);
 
             } else {
                 //shouldnt be possible anymore
@@ -282,15 +292,15 @@ public class ReplicationService {
         //if the referenceIp is the ip of this node -> this node should become the new owner of the file
         if(Objects.equals(ipOfRefrence, nodeService.getCurrentNode().getIP())){
             System.out.println("PutFile called, New Owner is assigned. New Owner  : " + ipOfRefrence);
-            globalMap.setOwner(file.getName() , ipOfRefrence);
+            globalMap.setOwner(file.getOriginalFilename() , ipOfRefrence);
             syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
             //push the change so the node receiving the files knows the owner -> concurrency is needed for proper scaling!
         }else {
 
             //this is for shutdown purposes
 
-            if (globalMap.containsKey(file.getName())) {
-                FileInfo fileInfo = globalMap.get(file.getName());
+            if (globalMap.containsKey(file.getOriginalFilename())) {
+                FileInfo fileInfo = globalMap.get(file.getOriginalFilename());
                 if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
                     //I already own a replicate of the file nothing
                     return ResponseEntity.status(HttpStatus.CONTINUE)
@@ -380,52 +390,69 @@ public class ReplicationService {
 
 
         public void shutdown(){
-
-        //so transfer replicated files and references (localRepFiles) to previous node,
-        //so we need to send a file and ip of owner ig
-
-        //so we can use uploadFileGivenIP from the controller
-
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
-            //loop over files and check if reapplication
+            //loop over files and check if replication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                String uri ;
-
-                if (globalMap.containsKey(child.getName())){
+                if (globalMap.containsKey(child.getName())) {
                     FileInfo fileInfo = globalMap.get(child.getName());
 
-                    //i replicated the file -> send file to previous node (owner should be synced already on previous node)
-                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
-                        sendFile(nodeService.getPreviousNode().getIP(), child, null);
-                        globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
-                    }
                     //should not be both possible
-                    else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
-                            && !fileInfo.getReplicationLocations().isEmpty() ) {
-                        //the file is owned by this node and there are replications -> new owner chosen??
-                        //for now we will just remove the owner from the FileInfo
-                        globalMap.setOwner(child.getName() , null);     //option 2
+                    if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
+                            && !fileInfo.getReplicationLocations().isEmpty()) {
+                        System.out.println("the file is owned by this node and there are replications -> new owner is previous node\n");
+                        //the file is owned by this node and there are replications -> new owner is previous node
+                        globalMap.setOwner(child.getName() , nodeService.getPreviousNode().getIP());
+                        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, nodeService.getPreviousNode().getIP());
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
                     }
-                    else { //the file is only local to me IG -> can be removed with shutdown i think
+                    //I replicated the file -> send file to previous node
+                    else if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
+                        System.out.println("I replicated the file -> send file to previous node");
+                        ResponseEntity<String> check = sendFile(nodeService.getPreviousNode().getIP(), child, null);
+                        System.out.println("Response of node to file transfer : " + check.getStatusCode());
+
+                        globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
+                        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+
+                    }
+
+                    else { //the file is only local to me IG -> can be removed with shutdown
                         globalMap.remove(child.getName());
-                        continue;
                     }
                 }
 
+                boolean deleted = child.delete();
+                if (deleted) {
+                    System.out.println("File " + child.getName() + " deleted successfully.");
+                } else {
+                    System.err.println("Failed to delete file " + child.getName());
+                    // Optionally handle the failure to delete (e.g., log it)
+                }
             }
-
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-
-        //we first need to make sure that the global file is synced with at least 1 node i think
-        //Done in the globalMap already
-        globalMap.deleteJsonFile();
-
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+            globalMap.deleteJsonFile();
     }
+
+
+    public void interruptSyncAgent() throws InterruptedException {
+        syncAgentThread.interrupt();
+    }
+    public void interruptFileChecker() throws InterruptedException {
+        fileCheckerThread.interrupt();
+    }
+
+    public void forwardMap(){
+        syncAgent.forwardMap(globalMap.getGlobalMapData() ,nodeService.getCurrentNode().getIP() );
+    }
+
 
 }
 

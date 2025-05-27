@@ -8,19 +8,13 @@ import java.util.*;
 
 public class FileInfo implements Serializable {
     private static final long serialVersionUID = 1L; // Good practice for Serializable
-
     private String filename;
-
-    //for these to become node object i need to send node as refrence in the replicationService!
     private String owner = null ;
-
     private Set<String> replicationLocations = null;
-
     private boolean isLocked;
     private String lockedByNodeId; //  Node IP that holds the lock, 0 or -1 if not locked
     private long version; // For optimistic locking or simple conflict resolution during sync
     private long lockVersion;
-
     private int fileHash;
 
     // Constructors, getters, setters, equals, hashCode

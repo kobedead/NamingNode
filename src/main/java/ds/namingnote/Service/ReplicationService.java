@@ -415,7 +415,7 @@ public class ReplicationService {
                             && !fileInfo.getReplicationLocations().isEmpty() ) {
                         System.out.println("the file is owned by this node and there are replications -> new owner is previous node\n");
                         //the file is owned by this node and there are replications -> new owner is previous node
-                        sendFile(nodeService.getPreviousNode().getIP() , child , nodeService.previousNode.getIP());
+                        sendFile(nodeService.getPreviousNode().getIP() , child , nodeService.getPreviousNode().getIP());
                     }
                     else { //the file is only local to me IG -> can be removed with shutdown
                         globalMap.remove(child.getName());

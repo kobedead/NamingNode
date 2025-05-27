@@ -398,14 +398,16 @@ public class ReplicationService {
 
                     //I replicated the file -> send file to previous node
                     if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
+                        System.out.println("I replicated the file -> send file to previous node");
                         sendFile(nodeService.getPreviousNode().getIP(), child, null);
                         globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
-                        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getCurrentNode().getIP());
+                        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
 
                     }
                     //should not be both possible
                     else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
                             && !fileInfo.getReplicationLocations().isEmpty() ) {
+                        System.out.println("the file is owned by this node and there are replications -> new owner is previous node\n");
                         //the file is owned by this node and there are replications -> new owner is previous node
                         sendFile(nodeService.getPreviousNode().getIP() , child , nodeService.previousNode.getIP());
                     }
@@ -419,7 +421,7 @@ public class ReplicationService {
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
         globalMap.deleteJsonFile();
     }
 

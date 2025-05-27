@@ -33,7 +33,6 @@ import static ds.namingnote.Config.NNConf.*;
 @Service
 public class ReplicationService {
 
-    private boolean running;
     private Thread fileCheckerThread = null;
 
     @Autowired
@@ -392,7 +391,6 @@ public class ReplicationService {
 
 
         public void shutdown(){
-        running = false;
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -401,7 +399,7 @@ public class ReplicationService {
                 //if name of file in replication files
                 if (globalMap.containsKey(child.getName())) {
                     FileInfo fileInfo = globalMap.get(child.getName());
-                    
+
                     //should not be both possible
                     if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
                             && !fileInfo.getReplicationLocations().isEmpty()) {
@@ -452,13 +450,11 @@ public class ReplicationService {
         fileCheckerThread.interrupt();
     }
 
-    public boolean isRunning() {
-        return running;
+    public void forwardMap(){
+        syncAgent.forwardMap(globalMap.getGlobalMapData() ,nodeService.getCurrentNode().getIP() );
     }
 
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
+
 }
 
 

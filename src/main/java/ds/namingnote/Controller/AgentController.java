@@ -3,26 +3,16 @@ package ds.namingnote.Controller;
 import ds.namingnote.Service.NodeService;
 import ds.namingnote.Service.ReplicationService;
 import ds.namingnote.Utilities.Node;
-import ds.namingnote.Agents.FailureAgent;
 import ds.namingnote.Agents.SyncAgent; // Only if controller interacts directly
 import ds.namingnote.Agents.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ds.namingnote.Config.NNConf; // For FILES_DIR
-import org.springframework.web.client.RestTemplate;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static ds.namingnote.Config.NNConf.FILES_DIR;
 
 
 @RestController
@@ -118,7 +108,7 @@ public class AgentController {
      * 5. Executes the REST method on the next node (unless the agent needs to be terminated)
      */
     @PostMapping("/execute")
-    public ResponseEntity<String> executeFailureAgent(@RequestBody byte[] serializedAgent)  {
+    public ResponseEntity executeFailureAgent(@RequestBody byte[] serializedAgent)  {
         return nodeService.executeFailureAgent(serializedAgent);
     }
 

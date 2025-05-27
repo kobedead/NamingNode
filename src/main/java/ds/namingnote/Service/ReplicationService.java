@@ -104,11 +104,18 @@ public class ReplicationService {
      */
     public void fileAdded(File file){
 
-        System.out.println("File added called");
+        System.out.println("File added called for file : " + file.getName());
         String ipOfOwner;
         FileInfo fileInfo = globalMap.get(file.getName());
         if (fileInfo != null){
             ipOfOwner = fileInfo.getOwner();
+            if (ipOfOwner == nodeService.getCurrentNode().getIP()){
+                globalMap.setOwner(file.getName(), ipOfOwner);
+                syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            }else {
+                globalMap.putReplicationReference(file.getName(), ipOfOwner);
+                syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
+            }
         }else{
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);

@@ -190,6 +190,8 @@ public class ReplicationService {
         }else
             System.out.println("File to send not yet in global map , File:" + file.getName() + "  COULD BE BAD") ;
 
+        System.out.println("Sending file: " + file.getAbsolutePath() + ", exists: " + file.exists() + ", length: " + file.length());
+
 
 
         final String uri;

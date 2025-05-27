@@ -57,7 +57,6 @@ public class ReplicationService {
     public void start(){
 
         if (fileCheckerThread == null || !fileCheckerThread.isAlive()) {
-            running = true;
             System.out.println("Creating new file checker and starting thread");
             fileCheckerThread = new Thread(new FileChecker(this));
             fileCheckerThread.start();

@@ -79,6 +79,7 @@ public class ReplicationService {
     }
 
     public void checkFiles(){
+        globalMap.deleteJsonFile();
         syncAgent.synchronizeWithNextNode();
         File dir = new File(FILES_DIR);  //get files dir
         File[] directoryListing = dir.listFiles();

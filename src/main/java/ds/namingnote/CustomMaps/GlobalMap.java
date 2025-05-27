@@ -46,8 +46,8 @@ public class GlobalMap {
 
     private GlobalMap() {
         // Load initial data from JSON into a temporary HashMap, then populate ConcurrentHashMap
-        Map<String, FileInfo> loadedData = loadJSON();
-        this.internalMap = new ConcurrentHashMap<>(loadedData);
+        deleteJsonFile();
+        this.internalMap = new ConcurrentHashMap<>();
     }
 
 

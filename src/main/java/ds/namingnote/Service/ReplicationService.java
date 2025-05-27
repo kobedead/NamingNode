@@ -105,6 +105,7 @@ public class ReplicationService {
      */
     public void fileAdded(File file){
 
+        System.out.println("File added called");
         String ipOfOwner;
         FileInfo fileInfo = globalMap.get(file.getName());
         if (fileInfo != null){
@@ -399,36 +400,43 @@ public class ReplicationService {
             //loop over files and check if replication
             for (File child : directoryListing) {
                 //if name of file in replication files
-                if (globalMap.containsKey(child.getName())){
+                if (globalMap.containsKey(child.getName())) {
                     FileInfo fileInfo = globalMap.get(child.getName());
 
                     //I replicated the file -> send file to previous node
-                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())){
+                    if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
                         System.out.println("I replicated the file -> send file to previous node");
                         sendFile(nodeService.getPreviousNode().getIP(), child, null);
-                        globalMap.removeReplicationReference(child.getName() , nodeService.getCurrentNode().getIP());
+                        globalMap.removeReplicationReference(child.getName(), nodeService.getCurrentNode().getIP());
                         //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
 
                     }
                     //should not be both possible
                     else if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())
-                            && !fileInfo.getReplicationLocations().isEmpty() ) {
+                            && !fileInfo.getReplicationLocations().isEmpty()) {
                         System.out.println("the file is owned by this node and there are replications -> new owner is previous node\n");
                         //the file is owned by this node and there are replications -> new owner is previous node
-                        sendFile(nodeService.getPreviousNode().getIP() , child , nodeService.getPreviousNode().getIP());
-                    }
-                    else { //the file is only local to me IG -> can be removed with shutdown
+                        globalMap.setOwner(child.getName() , nodeService.getPreviousNode().getIP());
+                        syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+                        sendFile(nodeService.getPreviousNode().getIP(), child, nodeService.getPreviousNode().getIP());
+                    } else { //the file is only local to me IG -> can be removed with shutdown
                         globalMap.remove(child.getName());
                     }
                 }
 
+                boolean deleted = child.delete();
+                if (deleted) {
+                    System.out.println("File " + child.getName() + " deleted successfully.");
+                } else {
+                    System.err.println("Failed to delete file " + child.getName());
+                    // Optionally handle the failure to delete (e.g., log it)
+                }
             }
-
         } else {
             System.out.println("Fault with directory : " + FILES_DIR);
         }
-        //syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
-        globalMap.deleteJsonFile();
+            syncAgent.forwardMap(globalMap.getGlobalMapData() , nodeService.getPreviousNode().getIP());
+            globalMap.deleteJsonFile();
     }
 
 

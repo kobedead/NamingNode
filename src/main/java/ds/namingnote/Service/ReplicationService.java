@@ -193,7 +193,6 @@ public class ReplicationService {
             System.out.println("File to send not yet in global map , File:" + file.getName() + "  COULD BE BAD") ;
 
 
-
         final String uri;
 
         //this is done to make the reference of files customizable and not only senders

@@ -426,11 +426,11 @@ public class ReplicationService {
     }
 
 
-    public void joinSyncAgent() throws InterruptedException {
-        syncAgentThread.join();
+    public void interruptSyncAgent() throws InterruptedException {
+        syncAgentThread.interrupt();
     }
-    public void joinFileChecker() throws InterruptedException {
-        fileCheckerThread.join();
+    public void interruptFileChecker() throws InterruptedException {
+        fileCheckerThread.interrupt();
     }
 
     public boolean isRunning() {

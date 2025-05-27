@@ -64,7 +64,7 @@ public class SyncAgent implements Runnable {
         System.out.println("SyncAgent started for node: " + attachedNode.getIP());
         try {
             //gets run every interval
-            while (nodeService.isRunning()) {
+            while (!Thread.currentThread().isInterrupted()) {
 
                 System.out.println("SyncAgent run loop iteration for node " + attachedNode.getIP());
 

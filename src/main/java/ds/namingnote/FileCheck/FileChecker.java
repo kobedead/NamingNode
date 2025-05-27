@@ -39,11 +39,8 @@ public class FileChecker implements Runnable{
             System.out.println("Watching directory: " + directoryPath);
 
             // Infinite loop to continuously watch for events
-            while (replicationService.isRunning() && running) {
-                if (Thread.currentThread().isInterrupted()) {
-                    running = false;
-                    break;
-                }
+            while (!Thread.currentThread().isInterrupted() && running) {
+
 
                 WatchKey key;
                 try {

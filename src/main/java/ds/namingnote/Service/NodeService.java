@@ -421,10 +421,9 @@ public class NodeService {
             running = false;
             System.out.println("Shutting down my threads");
 
-            multicastListenerThread.join();
-            multicastSenderThread.join();
-            replicationService.joinSyncAgent();
-            replicationService.joinFileChecker();
+            multicastSenderThread.interrupt();
+            replicationService.interruptSyncAgent();
+            replicationService.interruptFileChecker();
 
             System.out.println("Shutdown requested. Going back to waiting state...");
         } else {

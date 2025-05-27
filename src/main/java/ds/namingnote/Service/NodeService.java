@@ -421,7 +421,8 @@ public class NodeService {
             running = false;
             System.out.println("Shutting down my threads");
 
-            multicastSenderThread.interrupt();
+            multicastListenerThread.interrupt();
+            listenerStarted = false;
             replicationService.interruptSyncAgent();
             replicationService.interruptFileChecker();
 

@@ -203,6 +203,8 @@ public class ReplicationService {
             uri = "http://"+ipToSendTo+":"+NNConf.NAMINGNODE_PORT+"/node/file";
 
 
+        System.out.println("Sending file : " + file.getAbsolutePath() + ", exists: " + file.exists() + ", length: " + file.length());
+
 
         // Create headers for multipart form-data
         HttpHeaders headers = new HttpHeaders();

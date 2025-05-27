@@ -57,18 +57,24 @@ public class ReplicationService {
      */
     public void start(){
 
-        if (fileCheckerThread == null) {
+        if (fileCheckerThread == null || !fileCheckerThread.isAlive()) {
             running = true;
             System.out.println("Creating new file checker and starting thread");
             fileCheckerThread = new Thread(new FileChecker(this));
+            fileCheckerThread.start();
+        } else {
+            System.out.println("File checker thread is already running.");
+        }
+
+        if (syncAgentThread == null || !syncAgentThread.isAlive()) {
             syncAgent.initialize(nodeService);
             globalMap.setSyncAgent(syncAgent);
+            System.out.println("Creating new sync agent and starting thread");
             syncAgentThread = new Thread(syncAgent);
-        }
-        if (!fileCheckerThread.isAlive())
-            fileCheckerThread.start();
-        if (!syncAgentThread.isAlive())
             syncAgentThread.start();
+        } else {
+            System.out.println("Sync agent thread is already running.");
+        }
 
         checkFiles();
 

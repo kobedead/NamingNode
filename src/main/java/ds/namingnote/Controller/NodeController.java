@@ -83,30 +83,10 @@ public class NodeController {
      *                this is part of the failure agent.
      * @return
      */
-//    @PostMapping("/file/{ipOfRef}")
-//    public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
-//        System.out.println("File upload requested with refrence ip : " + ipOfRef);
-//        return replicationService.putFile(file , ipOfRef );
-//    }
-
     @PostMapping("/file/{ipOfRef}")
-    public ResponseEntity<String> uploadFileViaParam(
-            @RequestParam("file") MultipartFile file,
-            @PathVariable String ipOfRef,
-            HttpServletRequest request
-    ) {
-        System.out.println("File Upload (param) from IP: " + ipOfRef);
-        return replicationService.putFile(file, ipOfRef);
-    }
-
-    @PostMapping(value = "/file/{ipOfRef}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadFileViaPart(
-            @RequestPart("file") MultipartFile file,
-            @PathVariable String ipOfRef,
-            HttpServletRequest request
-    ) {
-        System.out.println("File Upload (part) from IP: " + ipOfRef);
-        return replicationService.putFile(file, ipOfRef);
+    public ResponseEntity<String> uploadFileGivenIP(@RequestParam("file") MultipartFile file  , @PathVariable String ipOfRef)  {
+        System.out.println("File upload requested with refrence ip : " + ipOfRef);
+        return replicationService.putFile(file , ipOfRef );
     }
 
 

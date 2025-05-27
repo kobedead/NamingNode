@@ -172,11 +172,6 @@ public class ReplicationService {
 
                 System.out.println("The file : " + file.getName() + " Is already on right node");
 
-                if (!globalMap.containsKey(file.getName())) {
-                    System.out.println("Set this node as owner of the file in GlobalMap");
-                    globalMap.setOwner(file.getName(), nodeService.getCurrentNode().getIP());
-                }else
-                    globalMap.putReplicationReference(file.getName(), nodeService.getCurrentNode().getIP());
             }
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

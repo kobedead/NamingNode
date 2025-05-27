@@ -118,6 +118,7 @@ public class ReplicationService {
                 syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
             }
         }else{
+            System.out.println("FileInfo is null setting myself as Owner ");
             ipOfOwner = nodeService.getCurrentNode().getIP();
             globalMap.setOwner(file.getName(), ipOfOwner);
             syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());

@@ -308,13 +308,12 @@ public class ReplicationService {
                     return ResponseEntity.status(HttpStatus.CONTINUE)
                             .body("I have a replicate already");
                 }
+                //im the owner -> send to previous
                 if (Objects.equals(fileInfo.getOwner(), nodeService.getCurrentNode().getIP())) {
-                    //here this node has the file locally -> send (stream) to previous, this is used cause multipartfile is received
-                    final String uri = "http://"+nodeService.getPreviousNode().getIP()+":"+NNConf.NAMINGNODE_PORT+"/node/file/"+nodeService.getCurrentNode().getIP();
-
+                    // Send the *received* MultipartFile's content
+                    final String uri = "http://" + nodeService.getPreviousNode().getIP() + ":" + NNConf.NAMINGNODE_PORT + "/node/file/" + nodeService.getCurrentNode().getIP();
                     HttpHeaders headers = new HttpHeaders();
                     headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
                     MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
                     try {
                         body.add("file", new InputStreamResource(file.getInputStream(), file.getOriginalFilename()));
@@ -323,7 +322,6 @@ public class ReplicationService {
                         ResponseEntity<String> response = restTemplate.exchange(
                                 uri, HttpMethod.POST, entity, String.class);
                         return response;
-
                     } catch (IOException e) {
                         e.printStackTrace();
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

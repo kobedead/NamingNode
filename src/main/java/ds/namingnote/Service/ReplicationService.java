@@ -109,10 +109,11 @@ public class ReplicationService {
         FileInfo fileInfo = globalMap.get(file.getName());
         if (fileInfo != null){
             ipOfOwner = fileInfo.getOwner();
-            if (ipOfOwner == nodeService.getCurrentNode().getIP()){
-                globalMap.setOwner(file.getName(), ipOfOwner);
+            if (Objects.equals(ipOfOwner, nodeService.getCurrentNode().getIP())){
+                System.out.println("Im the owner of the file in the globalMap ");
                 syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
             }else {
+                System.out.println("Im not owner of the file in the globalMap -> set myself as reference ");
                 globalMap.putReplicationReference(file.getName(), ipOfOwner);
                 syncAgent.forwardMap(globalMap.getGlobalMapData() , syncAgent.getAttachedNode().getIP());
             }
@@ -145,20 +146,20 @@ public class ReplicationService {
                     if (fileInfo.containsAsReference(ipOfNode)) {
                         //if this is the case the node where we want to send the file already has the file
                         //-> we can skip this
+                        System.out.println("Node already has the file");
                         return;
                     }
                     if (fileInfo.containsAsReference(nodeService.getCurrentNode().getIP())) {
                         //i already have the file -> we can skip
                         //-> FileChecker probably called this method
+                        System.out.println("I already have the file as reference");
+
                         return;
                     }
                 }
 
-
                 //here we only get if the file is owned by us and not send to node yet
-
                 System.out.println("The file : " + file.getName() + " Needs to be send to : " + ipOfNode);
-
                 //should do check or execution if file transfer not completed!!!!
                 ResponseEntity<String> check = sendFile(ipOfNode, file, null);
                 System.out.println("Response of node to file transfer : " + check.getStatusCode());
